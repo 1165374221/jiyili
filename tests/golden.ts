@@ -165,4 +165,71 @@ for (const [vendorName, v] of Object.entries(vendors)) {
   }
 }
 
+// ---- 全角归一化（bug #6）----
+//
+// 中文输入法在「中文标点」模式下会把 - 打成全角 －(U+FF0D)，字母数字也可能是全角。
+// generateAll 入口要把它归一化回半角，否则 parser 的正则失配——表现为「手动输入
+// 提示无法识别，复制粘贴却正常」；更糟的是表单里的 IP/端口列表会被原样拼进命令，
+// 再经「下发命令」推到现场交换机上。
+//
+// 这里把 TYPICAL 的每一种参数整体转成全角，断言输出与半角【逐字节相同】。
+// 只断言、不 push 快照：快照会忠实记录下错误的输出，而「相等」才是要守的性质。
+//
+// 注意：状态信息一律走 stderr。check-golden.sh 把 stdout 重定向进
+// golden.current.json，任何 console.log 都会污染语料。
+function toFullWidth(text: string): string {
+  let s = '';
+  for (const ch of text) {
+    const code = ch.codePointAt(0) as number;
+    if (code === 0x20) s += '　';                                   // 空格 → 全角空格
+    else if (code >= 0x21 && code <= 0x7e) s += String.fromCharCode(code + 0xfee0);
+    else s += ch;                                                       // 汉字原样保留
+  }
+  return s;
+}
+
+function toFullWidthDeep(value: unknown): unknown {
+  if (typeof value === 'string') return toFullWidth(value);
+  if (Array.isArray(value)) return value.map(toFullWidthDeep);
+  if (value !== null && typeof value === 'object') {
+    const o: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) o[k] = toFullWidthDeep(v);
+    return o;
+  }
+  return value;
+}
+
+const widthFailures: string[] = [];
+
+for (const vendorName of Object.keys(vendors)) {
+  const vendor = vendorName as Vendor;
+  const modelId = DEVICE_MODELS[vendor][0].id;
+
+  for (const c of TYPICAL) {
+    const half = generateAll(vendor, modelId, [{ type: c.type, params: c.params }]).command;
+    const full = generateAll(vendor, modelId, [{ type: c.type, params: toFullWidthDeep(c.params) }]).command;
+    if (half !== full) widthFailures.push(`${vendorName}/${c.type}/${c.name}`);
+  }
+
+  for (const q of QUICK) {
+    const half = generateAll(vendor, modelId, [{ type: 'quickcmd', params: q.text }]).command;
+    const full = generateAll(vendor, modelId, [{ type: 'quickcmd', params: toFullWidth(q.text) }]).command;
+    if (half !== full) widthFailures.push(`${vendorName}/quickcmd/${q.name}`);
+  }
+
+  // 零宽字符：在输入框里完全看不见，却会让正则失配。
+  const zeroWidth = generateAll(vendor, modelId, [{ type: 'quickcmd', params: 'vlan​ 100​ port 1-10 access' }]).command;
+  const plain = generateAll(vendor, modelId, [{ type: 'quickcmd', params: 'vlan 100 port 1-10 access' }]).command;
+  if (zeroWidth !== plain) widthFailures.push(`${vendorName}/quickcmd/零宽字符`);
+}
+
+if (widthFailures.length > 0) {
+  console.error('❌ 全角归一化失败，以下用例的全角输入与半角输出不一致：');
+  for (const f of widthFailures) console.error('   ' + f);
+  process.exit(1);
+}
+console.error(
+  `✅ 全角/零宽归一化：${Object.keys(vendors).length} 厂商 × (${TYPICAL.length} 类型 + ${QUICK.length} 快速命令 + 零宽) 与半角逐字节一致`,
+);
+
 console.log(JSON.stringify({ generatedBy: 'spike/golden.ts (改造前基线)', cases: out }, null, 2));

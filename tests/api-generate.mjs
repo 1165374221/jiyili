@@ -114,7 +114,36 @@ try {
   const empty = await post({ vendor: 'huawei', modelId: 's5700', blocks: [] });
   check('空 blocks 返回空命令', empty.success === true && empty.command === '', JSON.stringify(empty));
 
-  // 10. 跑完上面这些，进程还得活着
+  // 11. bug #6：中文输入法打出的全角字符要在服务端归一化。走真实 JSON 传输，
+  //     确认全角不会原样进入命令（下面用 \u 转义，避免源码里肉眼分不清全半角）。
+  const fullWidth = await post({
+    vendor: 'huawei', modelId: 's5700',
+    blocks: [{ type: 'quickcmd', params: 'vlan 100 port 1－10 access' }], // U+FF0D 全角连字符
+  });
+  const halfWidth = await post({
+    vendor: 'huawei', modelId: 's5700',
+    blocks: [{ type: 'quickcmd', params: 'vlan 100 port 1-10 access' }],
+  });
+  check('bug #6：全角快速命令产出与半角逐字节相同',
+    fullWidth.success === true && fullWidth.command.length > 0 && fullWidth.command === halfWidth.command,
+    JSON.stringify({ fullWidth, halfWidth }));
+  check('bug #6：产出命令里不含任何全角字符',
+    !/[！-～　]/.test(fullWidth.command), JSON.stringify(fullWidth.command));
+
+  // 12. bug #6 的表单路径：全角 IP 绝不能原样下发到交换机
+  const fwIface = await post({
+    vendor: 'huawei', modelId: 's5700',
+    blocks: [{ type: 'vlanif', params: { vlanId: 100, ip: '192．168．1．1', mask: 24 } }], // U+FF0E 全角句点
+  });
+  const hwIface = await post({
+    vendor: 'huawei', modelId: 's5700',
+    blocks: [{ type: 'vlanif', params: { vlanId: 100, ip: '192.168.1.1', mask: 24 } }],
+  });
+  check('bug #6：全角 IP 归一化后与半角一致',
+    fwIface.success === true && fwIface.command.length > 0 && fwIface.command === hwIface.command,
+    JSON.stringify({ fwIface, hwIface }));
+
+  // 13. 跑完上面这些，进程还得活着
   const stillAlive = await fetch(`${BASE}/api/status`).then((r) => r.ok).catch(() => false);
   check('畸形输入之后进程仍然存活', stillAlive === true, '进程已死');
 

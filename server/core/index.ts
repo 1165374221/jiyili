@@ -21,6 +21,7 @@ import { H3cCommands } from './vendors/h3c';
 import { HuaweiCommands } from './vendors/huawei';
 import { RuijieCommands } from './vendors/ruijie';
 import { parseAndGenerate } from './parser';
+import { normalizeDeep } from './normalize';
 
 const VENDOR_CLASSES: Record<Vendor, new () => VendorCommands> = {
   huawei: HuaweiCommands,
@@ -137,9 +138,12 @@ export function generateAll(
   const bodies: string[] = [];
 
   for (const b of blocks) {
+    // 归一化必须发生在解析/生成【之前】：中文输入法打出的全角字符会让 parser
+    // 的正则直接失配，也会被原样拼进下发给现场交换机的命令里。见 normalize.ts。
+    const params = normalizeDeep(b.params);
     const raw = b.type === 'quickcmd'
-      ? parseAndGenerate(typeof b.params === 'string' ? b.params : '', v)
-      : generateOne(v, b);
+      ? parseAndGenerate(typeof params === 'string' ? params : '', v)
+      : generateOne(v, b.type, params);
     // 与原实现一致：空命令不计入「已配置」，也不进正文。
     if (!raw) continue;
     applied.push(b.type);
@@ -159,9 +163,9 @@ export function generateAll(
   };
 }
 
-function generateOne(v: VendorCommands, b: GenerateBlock): string {
-  const gen = (GENERATORS as Record<string, AnyGenerator>)[b.type];
-  if (!gen) throw new Error(`未知配置类型：${String(b.type)}`);
+function generateOne(v: VendorCommands, type: string, params: unknown): string {
+  const gen = (GENERATORS as Record<string, AnyGenerator>)[type];
+  if (!gen) throw new Error(`未知配置类型：${String(type)}`);
   // params 来自 JSON，边界上无法静态得知形状，这一处强制收窄是必要的。
-  return gen(v, b.params as never);
+  return gen(v, params as never);
 }
