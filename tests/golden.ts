@@ -11,6 +11,10 @@ import { H3cCommands } from '../server/core/vendors/h3c';
 import { RuijieCommands } from '../server/core/vendors/ruijie';
 import type { VendorCommands } from '../server/core/vendors/base';
 import { parseAndGenerate } from '../server/core/parser';
+import { generateAll } from '../server/core/index';
+import type { GenerateBlock } from '../server/core/index';
+import type { Vendor } from '../src/types';
+import { DEVICE_MODELS } from '../src/types';
 
 // ---------- App.tsx:31-41 的原样复刻（聚合语义的基准）----------
 function stripWrapper(cmd: string): string {
@@ -134,17 +138,30 @@ const COMPOSITES: { name: string; order: string[]; picks: Record<string, number>
 for (const [vendorName, v] of Object.entries(vendors)) {
   for (const comp of COMPOSITES) {
     const bag: Record<string, string> = {};
+    // 与 bag 同序的 blocks：generateAll 需要显式顺序，因为它拿不到插入序。
+    const blocks: GenerateBlock[] = [];
+
     for (const t of comp.order) {
       if (t === 'quickcmd') {
-        bag[t] = parseAndGenerate('zzz 这不是一条能识别的命令', v);
+        const text = 'zzz 这不是一条能识别的命令';
+        bag[t] = parseAndGenerate(text, v);
+        blocks.push({ type: 'quickcmd', payload: text });
       } else {
         const pool = [...TYPICAL, ...EDGE].filter((c) => c.type === t);
         const picked = pool[comp.picks[t] ?? 0];
         const fn = v[METHOD[t]] as (p: unknown) => string;
         bag[t] = fn.call(v, picked.params);
+        blocks.push({ type: t, payload: picked.params });
       }
     }
+
+    // 旧路径：App.tsx 的客户端聚合（靠 detectVendor 猜厂商）
     out.push({ kind: 'composite', vendor: vendorName, type: comp.order.join('+'), name: comp.name, params: comp.order, command: aggregate(bag) });
+
+    // 新路径：服务端 generateAll（厂商显式传入）。默认型号的 ports 与厂商类
+    // 初始 portPrefix 四家全相等，所以这里除了 bug #3 的用例应当逐字节相同。
+    const defaultModelId = DEVICE_MODELS[vendorName as Vendor][0].id;
+    out.push({ kind: 'composite-api', vendor: vendorName, type: comp.order.join('+'), name: comp.name, params: comp.order, command: generateAll(vendorName as Vendor, defaultModelId, blocks).command });
   }
 }
 
