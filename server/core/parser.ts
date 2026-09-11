@@ -3,7 +3,7 @@ import type {
   VlanParams, VlanifParams, AclParams, AclRule, RoutingParams, StaticRoute,
   VrrpParams, DhcpParams, StpParams, LinkAggParams, NatParams,
   IfaceParams, PortSecParams, SnmpParams,
-} from './types';
+} from '../../src/types';
 
 function cidrToMaskStr(bits: number): string {
   if (bits <= 0 || bits > 32) return '0.0.0.0';

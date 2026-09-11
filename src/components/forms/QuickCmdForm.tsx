@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../AppContext';
-import { parseAndGenerate } from '../../parser';
+import { parseAndGenerate } from '../../../server/core/parser';
 
 interface Props {
   onChange: (cmd: string) => void;

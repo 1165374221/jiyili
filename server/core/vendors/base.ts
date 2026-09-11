@@ -20,7 +20,7 @@ import type {
   SyslogParams,
   LldpParams,
   QinqParams,
-} from '../types';
+} from '../../../src/types';
 
 export function cidrToMask(bits: number): string {
   if (bits < 0 || bits > 32) return '0.0.0.0';

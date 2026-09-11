@@ -5,12 +5,12 @@
 //  - 21 种配置 × 4 厂商全覆盖，确保文件搬运/import 修复不改变任何输出
 //  - 含边界值（掩码 0/32/33），暴露 cidrToMask(0) 这个既有 bug
 //  - 含 composite 聚合用例，覆盖 stripWrapper/detectVendor 的不对称行为
-import { CiscoCommands } from '../src/vendors/cisco';
-import { HuaweiCommands } from '../src/vendors/huawei';
-import { H3cCommands } from '../src/vendors/h3c';
-import { RuijieCommands } from '../src/vendors/ruijie';
-import type { VendorCommands } from '../src/vendors/base';
-import { parseAndGenerate } from '../src/parser';
+import { CiscoCommands } from '../server/core/vendors/cisco';
+import { HuaweiCommands } from '../server/core/vendors/huawei';
+import { H3cCommands } from '../server/core/vendors/h3c';
+import { RuijieCommands } from '../server/core/vendors/ruijie';
+import type { VendorCommands } from '../server/core/vendors/base';
+import { parseAndGenerate } from '../server/core/parser';
 
 // ---------- App.tsx:31-41 的原样复刻（聚合语义的基准）----------
 function stripWrapper(cmd: string): string {

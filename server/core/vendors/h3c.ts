@@ -1,9 +1,9 @@
 import type { VendorCommands } from './base';
-import type { VlanParams, VlanifParams, AclParams, RoutingParams, LinkAggParams, StpParams, AaaParams, NatParams, QosParams, VxlanParams, StackParams, VrrpParams, DhcpParams, FwPolicyParams, IfaceParams, PortSecParams, SnmpParams, NtpParams, SyslogParams, LldpParams, QinqParams } from '../types';
+import type { VlanParams, VlanifParams, AclParams, RoutingParams, LinkAggParams, StpParams, AaaParams, NatParams, QosParams, VxlanParams, StackParams, VrrpParams, DhcpParams, FwPolicyParams, IfaceParams, PortSecParams, SnmpParams, NtpParams, SyslogParams, LldpParams, QinqParams } from '../../../src/types';
 
-export class HuaweiCommands implements VendorCommands {
-  name = '华为 Huawei';
-  portPrefix = 'GigabitEthernet0/0/';
+export class H3cCommands implements VendorCommands {
+  name = 'H3C 华三';
+  portPrefix = 'GigabitEthernet1/0/';
 
   setPortPrefix(prefix: string) { this.portPrefix = prefix; }
 
@@ -28,13 +28,13 @@ export class HuaweiCommands implements VendorCommands {
       cmds.push(`interface ${iface}`);
       if (p.portMode === 'hybrid') {
         cmds.push(` port link-type hybrid`);
-        p.vlanIds.forEach((id) => cmds.push(` port hybrid untagged vlan ${id}`));
+        p.vlanIds.forEach((id) => cmds.push(` port hybrid vlan ${id} untagged`));
       } else if (p.portMode === 'trunk') {
         cmds.push(` port link-type trunk`);
-        cmds.push(` port trunk allow-pass vlan ${p.vlanIds.join(' ')}`);
+        cmds.push(` port trunk permit vlan ${p.vlanIds.join(' ')}`);
       } else {
         cmds.push(` port link-type access`);
-        cmds.push(` port default vlan ${p.vlanIds[0]}`);
+        cmds.push(` port access vlan ${p.vlanIds[0]}`);
       }
       cmds.push(' quit');
     });
@@ -56,12 +56,10 @@ export class HuaweiCommands implements VendorCommands {
   generateAclConfig(p: AclParams): string {
     const cmds: string[] = ['system-view'];
 
-    // Time-range
     if (p.timeRange) {
       cmds.push(`time-range ${p.timeRange} 09:00 to 18:00 working-day`);
     }
 
-    // ACL header
     if (p.aclType === 'layer2') {
       cmds.push(`acl ${p.aclNumber}`);
     } else if (p.aclType === 'named') {
@@ -73,7 +71,6 @@ export class HuaweiCommands implements VendorCommands {
       cmds.push(`acl ${t} ${p.aclNumber}`);
     }
 
-    // Rules
     p.rules.forEach((r) => {
       if (p.aclType === 'layer2') {
         let rule = ` rule ${r.ruleId} ${r.action}`;
@@ -93,12 +90,11 @@ export class HuaweiCommands implements VendorCommands {
 
     cmds.push(' quit');
 
-    // Apply to interface
     if (p.applyInterface) {
       cmds.push(`interface ${p.applyInterface}`);
       const dir = p.applyDirection === 'outbound' ? 'outbound' : 'inbound';
-      const aclRef = p.aclType === 'named' ? `acl name ${p.aclName || 'MYACL'}` : `acl ${p.aclNumber}`;
-      cmds.push(` traffic-filter ${dir} ${aclRef}`);
+      const aclRef = p.aclType === 'named' ? `name ${p.aclName || 'MYACL'}` : `${p.aclNumber}`;
+      cmds.push(` packet-filter ${aclRef} ${dir}`);
       cmds.push(' quit');
     }
 
@@ -116,55 +112,36 @@ export class HuaweiCommands implements VendorCommands {
     });
 
     if (p.ospf) {
-      const ospfCmd = p.ospf.isV3 ? 'ospfv3' : 'ospf';
-      cmds.push(`${ospfCmd} ${p.ospf.processId} router-id ${p.ospf.routerId}`);
+      cmds.push(`ospf ${p.ospf.processId} router-id ${p.ospf.routerId}`);
       if (p.ospf.defaultOriginate) cmds.push(' default-route-advertise always');
       if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
-      if (!p.ospf.isV3 && p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
+      if (p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
       if (p.ospf.cost) cmds.push(` default cost ${p.ospf.cost}`);
       if (p.ospf.passiveInterfaces) {
-        const ifs = p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean);
-        ifs.forEach((iface) => cmds.push(` silent-interface ${iface}`));
+        p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
       }
-      if (p.ospf.isV3) {
-        cmds.push(` area ${p.ospf.area}`);
-        p.ospf.networks.forEach((n) => {
-          cmds.push(`  network ${n.network} ${n.wildcard}`);
-        });
-      } else {
-        cmds.push(` area ${p.ospf.area}`);
-        if (p.ospf.authMode === 'simple') cmds.push(`  authentication-mode simple cipher ${p.ospf.authKey || '123'}`);
-        else if (p.ospf.authMode === 'md5') cmds.push(`  authentication-mode md5 1 cipher ${p.ospf.authKey || '123'}`);
-        p.ospf.networks.forEach((n) => {
-          cmds.push(`  network ${n.network} ${n.wildcard}`);
-        });
-      }
+      cmds.push(` area ${p.ospf.area}`);
+      if (p.ospf.authMode === 'simple') cmds.push(`  authentication-mode simple cipher ${p.ospf.authKey || '123'}`);
+      else if (p.ospf.authMode === 'md5') cmds.push(`  authentication-mode md5 1 cipher ${p.ospf.authKey || '123'}`);
+      p.ospf.networks.forEach((n) => cmds.push(`  network ${n.network} ${n.wildcard}`));
       cmds.push(' quit');
     }
 
     if (p.bgp) {
       cmds.push(`bgp ${p.bgp.asNumber}`);
       cmds.push(` router-id ${p.bgp.routerId}`);
-      p.bgp.neighbors.forEach((n) => {
-        cmds.push(` peer ${n.ip} as-number ${n.remoteAs}`);
-      });
-      p.bgp.networks.forEach((nw) => {
-        cmds.push(` network ${nw.network} ${nw.mask}`);
-      });
+      p.bgp.neighbors.forEach((n) => cmds.push(` peer ${n.ip} as-number ${n.remoteAs}`));
+      p.bgp.networks.forEach((nw) => cmds.push(` network ${nw.network} ${nw.mask}`));
       cmds.push(' quit');
     }
 
     if (p.rip) {
-      cmds.push(`rip 1`);
+      cmds.push('rip 1');
       cmds.push(` version ${p.rip.version}`);
       p.rip.networks.forEach((n) => cmds.push(` network ${n}`));
       if (p.rip.defaultOriginate) cmds.push(' default-route originate');
       if (p.rip.redistribute?.length) p.rip.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
-      if (p.rip.passiveInterfaces) {
-        p.rip.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
-      }
-      if (p.rip.authMode === 'simple') cmds.push(` authentication-mode simple ${p.rip.authKey || '123'}`);
-      else if (p.rip.authMode === 'md5') cmds.push(` authentication-mode md5 usual ${p.rip.authKey || '123'}`);
+      if (p.rip.passiveInterfaces) p.rip.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
       cmds.push(' quit');
     }
 
@@ -176,15 +153,15 @@ export class HuaweiCommands implements VendorCommands {
     const cmds: string[] = ['system-view'];
     const ports = p.ports.split(/[,\s]+/).filter(Boolean);
 
-    cmds.push(`interface Eth-Trunk ${p.groupId}`);
-    cmds.push(` mode ${p.mode === 'lacp' ? 'lacp' : 'manual load-balance'}`);
-    if (p.loadBalance) cmds.push(` load-balance ${p.loadBalance}`);
+    cmds.push(`interface Bridge-Aggregation ${p.groupId}`);
+    cmds.push(` link-aggregation mode ${p.mode === 'lacp' ? 'dynamic' : 'static'}`);
+    if (p.loadBalance) cmds.push(` link-aggregation load-sharing mode ${p.loadBalance}`);
     cmds.push(' quit');
 
     ports.forEach((pt) => {
       const iface = this.portFormat(pt);
       cmds.push(`interface ${iface}`);
-      cmds.push(` eth-trunk ${p.groupId}`);
+      cmds.push(` port link-aggregation group ${p.groupId}`);
       cmds.push(' quit');
     });
 
@@ -205,7 +182,7 @@ export class HuaweiCommands implements VendorCommands {
       const ports = p.edgePorts.split(/[,\s]+/).filter(Boolean);
       ports.forEach((pt) => {
         cmds.push(`interface ${this.portFormat(pt)}`);
-        cmds.push(' stp edged-port enable');
+        cmds.push(' stp edged-port');
         cmds.push(' quit');
       });
     }
@@ -222,7 +199,6 @@ export class HuaweiCommands implements VendorCommands {
     const cmds: string[] = ['system-view'];
     cmds.push('aaa');
 
-    // Auth scheme
     cmds.push(' authentication-scheme default');
     if (p.authMode === 'local') {
       cmds.push('  authentication-mode local');
@@ -240,40 +216,36 @@ export class HuaweiCommands implements VendorCommands {
 
     cmds.push(' quit');
 
-    // RADIUS
     if (p.authMode === 'radius' && p.radiusServer) {
-      cmds.push(`radius-server template default`);
-      if (p.radiusKey) cmds.push(` radius-server shared-key cipher ${p.radiusKey}`);
-      cmds.push(` radius-server ${p.radiusServer} 1812`);
+      cmds.push(`radius scheme default`);
+      if (p.radiusKey) cmds.push(` key authentication cipher ${p.radiusKey}`);
+      cmds.push(` primary authentication ${p.radiusServer}`);
       cmds.push(' quit');
     }
 
-    // TACACS+
     if (p.authMode === 'tacacs+' && p.tacacsServer) {
-      cmds.push(`hwtacacs-server template default`);
-      if (p.tacacsKey) cmds.push(` hwtacacs-server shared-key cipher ${p.tacacsKey}`);
-      cmds.push(` hwtacacs-server ${p.tacacsServer}`);
+      cmds.push(`hwtacacs scheme default`);
+      if (p.tacacsKey) cmds.push(` key authentication cipher ${p.tacacsKey}`);
+      cmds.push(` primary authentication ${p.tacacsServer}`);
       cmds.push(' quit');
     }
 
-    // Local users
     p.localUsers.forEach((u) => {
       cmds.push(`local-user ${u.username} password cipher ${u.password}`);
-      cmds.push(`local-user ${u.username} privilege level ${u.privilege}`);
+      const role = u.privilege >= 15 ? 'network-admin' : `level-${u.privilege}`;
+      cmds.push(`local-user ${u.username} authorization-attribute user-role ${role}`);
       cmds.push(`local-user ${u.username} service-type ${u.serviceTypes.join(' ')}`);
     });
 
-    // Telnet
     if (p.enableTelnet) {
       cmds.push('user-interface vty 0 4');
-      cmds.push(' authentication-mode aaa');
+      cmds.push(' authentication-mode scheme');
       cmds.push(' protocol inbound all');
       cmds.push(' quit');
     }
 
-    // SSH
     if (p.enableSsh) {
-      cmds.push('stelnet server enable');
+      cmds.push('ssh server enable');
       p.localUsers.forEach((u) => {
         cmds.push(`ssh user ${u.username} authentication-type password`);
         cmds.push(`ssh user ${u.username} service-type stelnet`);
@@ -325,7 +297,6 @@ export class HuaweiCommands implements VendorCommands {
   generateQosConfig(p: QosParams): string {
     const cmds: string[] = ['system-view'];
 
-    // Classifiers
     p.classifiers.forEach((c) => {
       cmds.push(`traffic classifier ${c.name} operator and`);
       if (c.matchType === 'acl' && c.aclNumber) {
@@ -342,7 +313,6 @@ export class HuaweiCommands implements VendorCommands {
       cmds.push(' quit');
     });
 
-    // Behaviors
     p.behaviors.forEach((b) => {
       cmds.push(`traffic behavior ${b.name}`);
       if (b.carRate) {
@@ -356,21 +326,18 @@ export class HuaweiCommands implements VendorCommands {
       cmds.push(' quit');
     });
 
-    // Policy
     cmds.push(`traffic policy ${p.policyName}`);
     p.policyRules.forEach((pr) => {
       cmds.push(` classifier ${pr.classifierName} behavior ${pr.behaviorName}`);
     });
     cmds.push(' quit');
 
-    // Apply
     if (p.applyInterface) {
       cmds.push(`interface ${p.applyInterface}`);
       cmds.push(` traffic-policy ${p.policyName} ${p.applyDirection}`);
       cmds.push(' quit');
     }
 
-    // Flow control
     if (p.enableFlowControl && p.flowControlInterface) {
       cmds.push(`interface ${p.flowControlInterface}`);
       cmds.push(' flow-control');
@@ -384,21 +351,19 @@ export class HuaweiCommands implements VendorCommands {
   generateVxlanConfig(p: VxlanParams): string {
     const cmds: string[] = ['system-view'];
 
-    p.vnis.forEach((v) => {
-      cmds.push(`bridge-domain ${v.bridgeDomainId || v.vniId}`);
-      cmds.push(` vxlan vni ${v.vniId}`);
-      cmds.push(' quit');
-    });
-
     cmds.push(`interface Nve${p.nveId}`);
     cmds.push(` source ${p.sourceIp}`);
+    cmds.push(' quit');
+
     p.vnis.forEach((v) => {
       const peers = v.peerIps.split(/[,\s]+/).filter(Boolean);
+      cmds.push(`vxlan tunnel ${v.vniId}`);
+      cmds.push(` source ${p.sourceIp}`);
       peers.forEach((peer) => {
-        cmds.push(` vni ${v.vniId} head-end peer-list ${peer}`);
+        cmds.push(` destination ${peer}`);
       });
+      cmds.push(' quit');
     });
-    cmds.push(' quit');
 
     // return
     return cmds.join('\n');
@@ -408,15 +373,15 @@ export class HuaweiCommands implements VendorCommands {
     const cmds: string[] = ['system-view'];
 
     p.members.forEach((m) => {
-      cmds.push(`stack member ${m.memberId} priority ${m.priority}`);
-      if (m.domainId) cmds.push(`stack member ${m.memberId} domain ${m.domainId}`);
+      cmds.push(`irf member ${m.memberId} priority ${m.priority}`);
+      if (m.domainId) cmds.push(`irf member ${m.memberId} domain ${m.domainId}`);
     });
 
     p.stackPorts.forEach((sp) => {
       const ifaces = sp.interfaces.split(/[,\s]+/).filter(Boolean);
-      cmds.push(`interface stack-port ${sp.portId}`);
+      cmds.push(`interface irf-port ${sp.portId}`);
       ifaces.forEach((iface) => {
-        cmds.push(` port member-group interface ${iface}`);
+        cmds.push(` port group interface ${iface}`);
       });
       cmds.push(' quit');
     });
@@ -431,7 +396,6 @@ export class HuaweiCommands implements VendorCommands {
     cmds.push(` vrrp vrid ${p.vrid} virtual-ip ${p.virtualIp}`);
     cmds.push(` vrrp vrid ${p.vrid} priority ${p.priority}`);
     if (p.preempt) cmds.push(` vrrp vrid ${p.vrid} preempt-mode timer delay 0`);
-    if (p.authKey) cmds.push(` vrrp vrid ${p.vrid} authentication-mode simple cipher ${p.authKey}`);
     cmds.push(' quit');
     // return
     return cmds.join('\n');
@@ -441,25 +405,23 @@ export class HuaweiCommands implements VendorCommands {
     const cmds: string[] = ['system-view'];
     if (p.mode === 'server' && p.poolName && p.network) {
       cmds.push('dhcp enable');
-      cmds.push(`ip pool ${p.poolName}`);
+      cmds.push(`dhcp server ip-pool ${p.poolName}`);
       cmds.push(` gateway-list ${p.gateway || p.network}`);
       cmds.push(` network ${p.network} mask ${p.mask || 24}`);
       if (p.dnsServers) cmds.push(` dns-list ${p.dnsServers}`);
-      cmds.push(` address range ${p.startIp || p.network} ${p.endIp || ''}`);
       cmds.push(' quit');
     } else if (p.mode === 'relay' && p.relayServer) {
       cmds.push('dhcp enable');
-      cmds.push(`dhcp relay server-select ${p.relayServer}`);
+      cmds.push(`dhcp relay server-address ${p.relayServer}`);
     }
     if (p.mode === 'snooping') {
-      cmds.push('dhcp enable');
       cmds.push('dhcp snooping enable');
     }
     if (p.trustInterfaces) {
       const ifaces = p.trustInterfaces.split(/[,\s]+/).filter(Boolean);
       ifaces.forEach((iface) => {
         cmds.push(`interface ${iface}`);
-        cmds.push(' dhcp snooping trusted');
+        cmds.push(' dhcp snooping trust');
         cmds.push(' quit');
       });
     }
@@ -471,8 +433,8 @@ export class HuaweiCommands implements VendorCommands {
     const cmds: string[] = ['system-view'];
     const zones = p.zones.split(/[,\s]+/).filter(Boolean);
     zones.forEach((z) => {
-      cmds.push(`firewall zone name ${z}`);
-      cmds.push(` set priority ${10 + zones.indexOf(z) * 5}`);
+      cmds.push(`security-zone name ${z}`);
+      cmds.push(` priority ${10 + zones.indexOf(z) * 5}`);
       cmds.push(' quit');
     });
     p.rules.forEach((r) => {
@@ -484,7 +446,6 @@ export class HuaweiCommands implements VendorCommands {
       cmds.push(`  destination-address ${r.destIp}`);
       cmds.push(`  service ${r.protocol}${r.destPort ? ` destination-port ${r.destPort}` : ''}`);
       cmds.push(`  action ${r.action}`);
-      if (r.description) cmds.push(`  description ${r.description}`);
       cmds.push(' quit');
     });
     // return
@@ -508,15 +469,11 @@ export class HuaweiCommands implements VendorCommands {
   generatePortSecConfig(p: PortSecParams): string {
     const cmds: string[] = ['system-view'];
     cmds.push(`interface ${p.interfaceName}`);
-    cmds.push(` port-security enable`);
+    cmds.push(' port-security enable');
     cmds.push(` port-security max-mac-num ${p.maxMac}`);
     const modeMap = { restrict: 'restrict', shutdown: 'shutdown', protect: 'protect' };
-    cmds.push(` port-security protect-action ${modeMap[p.mode]}`);
+    cmds.push(` port-security violation ${modeMap[p.mode]}`);
     if (p.sticky) cmds.push(' port-security mac-address sticky');
-    if (p.staticMacs) {
-      const macs = p.staticMacs.split(/[,\s]+/).filter(Boolean);
-      macs.forEach((m) => cmds.push(` port-security mac-address ${m} vlan 1`));
-    }
     cmds.push(' quit');
     // return
     return cmds.join('\n');
@@ -528,11 +485,9 @@ export class HuaweiCommands implements VendorCommands {
     if (p.version === 'v2c') {
       cmds.push(`snmp-agent community read ${p.community}`);
     } else {
-      cmds.push(`snmp-agent sys-info version v3`);
-      cmds.push(`snmp-agent group v3 ${p.community} read-view ViewDefault`);
+      cmds.push('snmp-agent sys-info version v3');
     }
     if (p.location) cmds.push(`snmp-agent sys-info location ${p.location}`);
-    if (p.contact) cmds.push(`snmp-agent sys-info contact ${p.contact}`);
     if (p.trapServer) cmds.push(`snmp-agent target-host trap address udp ${p.trapServer} params securityname ${p.community}`);
     // return
     return cmds.join('\n');
@@ -549,19 +504,14 @@ export class HuaweiCommands implements VendorCommands {
   generateSyslogConfig(p: SyslogParams): string {
     const cmds: string[] = ['system-view'];
     cmds.push('info-center enable');
-    cmds.push(`info-center loghost ${p.serverIp} facility ${p.facility || 'local0'} language english`);
-    if (p.level) cmds.push(`info-center source default channel loghost log level ${p.level}`);
+    cmds.push(`info-center loghost ${p.serverIp} facility ${p.facility || 'local0'}`);
     // return
     return cmds.join('\n');
   }
 
   generateLldpConfig(p: LldpParams): string {
     const cmds: string[] = ['system-view'];
-    if (p.enable) {
-      cmds.push('lldp enable');
-    } else {
-      cmds.push('undo lldp enable');
-    }
+    cmds.push(p.enable ? 'lldp enable' : 'undo lldp enable');
     // return
     return cmds.join('\n');
   }
@@ -569,18 +519,14 @@ export class HuaweiCommands implements VendorCommands {
   generateQinqConfig(p: QinqParams): string {
     const cmds: string[] = ['system-view'];
     cmds.push(`interface ${p.interfaceName}`);
-    if (p.mode === 'basic') {
-      cmds.push(' port link-type dot1q-tunnel');
-      cmds.push(` port default vlan ${p.outerVlan}`);
-    } else {
+    cmds.push(' qinq enable');
+    if (p.mode === 'selective') {
       const innerVlans = p.innerVlans.split(/[,\s]+/).filter(Boolean);
-      cmds.push(' port link-type hybrid');
-      cmds.push(' qinq vlan-translation enable');
-      cmds.push(` port hybrid tagged vlan ${p.outerVlan}`);
       innerVlans.forEach((v) => {
-        cmds.push(` port vlan-stacking vlan ${v} stack-vlan ${p.outerVlan}`);
+        cmds.push(` qinq transparent-vlan ${v}`);
       });
     }
+    cmds.push(` qinq vid ${p.outerVlan}`);
     cmds.push(' quit');
     return cmds.join('\n');
   }

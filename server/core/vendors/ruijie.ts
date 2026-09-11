@@ -1,10 +1,10 @@
 import type { VendorCommands } from './base';
 import { cidrToMask } from './base';
-import type { VlanParams, VlanifParams, AclParams, RoutingParams, LinkAggParams, StpParams, AaaParams, NatParams, QosParams, VxlanParams, StackParams, VrrpParams, DhcpParams, FwPolicyParams, IfaceParams, PortSecParams, SnmpParams, NtpParams, SyslogParams, LldpParams, QinqParams } from '../types';
+import type { VlanParams, VlanifParams, AclParams, RoutingParams, LinkAggParams, StpParams, AaaParams, NatParams, QosParams, VxlanParams, StackParams, VrrpParams, DhcpParams, FwPolicyParams, IfaceParams, PortSecParams, SnmpParams, NtpParams, SyslogParams, LldpParams, QinqParams } from '../../../src/types';
 
-export class CiscoCommands implements VendorCommands {
-  name = 'Cisco 思科';
-  portPrefix = 'GigabitEthernet0/';
+export class RuijieCommands implements VendorCommands {
+  name = '锐捷 Ruijie';
+  portPrefix = 'GigabitEthernet 0/';
 
   setPortPrefix(prefix: string) { this.portPrefix = prefix; }
 
@@ -33,9 +33,8 @@ export class CiscoCommands implements VendorCommands {
     }
 
     if (p.portMode === 'trunk') {
-      cmds.push(' switchport trunk encapsulation dot1q');
       cmds.push(' switchport mode trunk');
-      cmds.push(` switchport trunk allowed vlan ${p.vlanIds.join(',')}`);
+      cmds.push(` switchport trunk allowed vlan add ${p.vlanIds.join(',')}`);
     } else {
       cmds.push(' switchport mode access');
       cmds.push(` switchport access vlan ${p.vlanIds[0]}`);
@@ -128,21 +127,10 @@ export class CiscoCommands implements VendorCommands {
       cmds.push(` router-id ${p.ospf.routerId}`);
       if (p.ospf.defaultOriginate) cmds.push(' default-information originate always');
       if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` redistribute ${r} subnets`));
-      if (!p.ospf.isV3 && p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
       if (p.ospf.cost) cmds.push(` auto-cost reference-bandwidth ${p.ospf.cost}`);
       if (p.ospf.passiveInterfaces) cmds.push(' passive-interface default');
-      if (!p.ospf.isV3 && p.ospf.authMode === 'md5') cmds.push(` area ${p.ospf.area} authentication message-digest`);
-      if (p.ospf.isV3) {
-        p.ospf.networks.forEach((n) => {
-          if (n.network) cmds.push(`interface ${n.network}`);
-          cmds.push(` ipv6 ospf ${p.ospf!.processId} area ${n.area || p.ospf!.area}`);
-          if (n.network) cmds.push(' exit');
-        });
-      } else {
-        p.ospf.networks.forEach((n) => {
-          cmds.push(` network ${n.network} ${n.wildcard} area ${n.area || p.ospf!.area}`);
-        });
-      }
+      if (p.ospf.authMode === 'md5') cmds.push(` area ${p.ospf.area} authentication message-digest`);
+      p.ospf.networks.forEach((n) => cmds.push(` network ${n.network} ${n.wildcard} area ${n.area || p.ospf!.area}`));
       cmds.push(' exit');
     }
 
@@ -173,7 +161,6 @@ export class CiscoCommands implements VendorCommands {
     const ports = p.ports.split(/[,\s]+/).filter(Boolean);
 
     cmds.push(`interface Port-channel ${p.groupId}`);
-    cmds.push(` switchport`);
     if (p.loadBalance) cmds.push(` port-channel load-balance ${p.loadBalance}`);
     cmds.push(' exit');
 
@@ -193,11 +180,11 @@ export class CiscoCommands implements VendorCommands {
   generateStpConfig(p: StpParams): string {
     const cmds: string[] = ['configure terminal'];
 
-    const modeMap = { stp: 'pvst', rstp: 'rapid-pvst', mstp: 'mst' };
+    const modeMap = { stp: 'stp', rstp: 'rstp', mstp: 'mstp' };
     cmds.push(`spanning-tree mode ${modeMap[p.mode]}`);
 
     if (p.rootBridge) {
-      cmds.push('spanning-tree vlan 1 root primary');
+      cmds.push('spanning-tree mst 0 root primary');
     }
 
     if (p.edgePorts) {
@@ -231,7 +218,6 @@ export class CiscoCommands implements VendorCommands {
       cmds.push('aaa authentication login default group tacacs+ local');
       cmds.push('aaa authorization exec default group tacacs+ local');
     }
-    cmds.push('aaa accounting exec default start-stop group tacacs+');
 
     if (p.authMode === 'radius' && p.radiusServer) {
       cmds.push(`radius-server host ${p.radiusServer}`);
@@ -411,20 +397,8 @@ export class CiscoCommands implements VendorCommands {
       if (p.gateway) cmds.push(` default-router ${p.gateway}`);
       if (p.dnsServers) cmds.push(` dns-server ${p.dnsServers}`);
       cmds.push(' exit');
-    } else if (p.mode === 'relay' && p.relayServer) {
-      cmds.push(`ip helper-address ${p.relayServer}`);
     }
-    if (p.mode === 'snooping') {
-      cmds.push('ip dhcp snooping');
-    }
-    if (p.trustInterfaces) {
-      const ifaces = p.trustInterfaces.split(/[,\s]+/).filter(Boolean);
-      ifaces.forEach((iface) => {
-        cmds.push(`interface ${iface}`);
-        cmds.push(' ip dhcp snooping trust');
-        cmds.push(' exit');
-      });
-    }
+    if (p.mode === 'snooping') cmds.push('ip dhcp snooping');
     cmds.push('end');
     return cmds.join('\n');
   }
@@ -436,7 +410,6 @@ export class CiscoCommands implements VendorCommands {
     p.rules.forEach((r) => {
       cmds.push(`policy-map type inspect ${r.sourceZone}_to_${r.destZone}`);
       cmds.push(` class type inspect ${r.sourceZone}_class`);
-      cmds.push(`  inspect`);
       cmds.push(`  ${r.action === 'deny' ? 'drop' : 'pass'}`);
     });
     cmds.push('end');
@@ -464,10 +437,6 @@ export class CiscoCommands implements VendorCommands {
     cmds.push(` switchport port-security maximum ${p.maxMac}`);
     cmds.push(` switchport port-security violation ${p.mode}`);
     if (p.sticky) cmds.push(' switchport port-security mac-address sticky');
-    if (p.staticMacs) {
-      const macs = p.staticMacs.split(/[,\s]+/).filter(Boolean);
-      macs.forEach((m) => cmds.push(` switchport port-security mac-address ${m}`));
-    }
     cmds.push(' exit');
     cmds.push('end');
     return cmds.join('\n');
@@ -475,14 +444,8 @@ export class CiscoCommands implements VendorCommands {
 
   generateSnmpConfig(p: SnmpParams): string {
     const cmds: string[] = ['configure terminal'];
-    if (p.version === 'v2c') {
-      cmds.push(`snmp-server community ${p.community} RO`);
-    } else {
-      cmds.push(`snmp-server group v3group v3 priv`);
-      cmds.push(`snmp-server user ${p.community} v3group v3`);
-    }
+    cmds.push(`snmp-server community ${p.community} RO`);
     if (p.location) cmds.push(`snmp-server location ${p.location}`);
-    if (p.contact) cmds.push(`snmp-server contact ${p.contact}`);
     if (p.trapServer) cmds.push(`snmp-server host ${p.trapServer} ${p.community}`);
     cmds.push('end');
     return cmds.join('\n');

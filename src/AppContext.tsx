@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useRef, useCallback, type ReactNode } from 'react';
 import type { Vendor, ConfigType, DeviceModel } from './types';
 import { DEVICE_MODELS } from './types';
-import type { VendorCommands } from './vendors/base';
-import { HuaweiCommands } from './vendors/huawei';
-import { H3cCommands } from './vendors/h3c';
-import { CiscoCommands } from './vendors/cisco';
-import { RuijieCommands } from './vendors/ruijie';
+import type { VendorCommands } from '../server/core/vendors/base';
+import { HuaweiCommands } from '../server/core/vendors/huawei';
+import { H3cCommands } from '../server/core/vendors/h3c';
+import { CiscoCommands } from '../server/core/vendors/cisco';
+import { RuijieCommands } from '../server/core/vendors/ruijie';
 
 const vendors: Record<Vendor, VendorCommands> = {
   huawei: new HuaweiCommands(),
