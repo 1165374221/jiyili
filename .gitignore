@@ -19,6 +19,9 @@ server/core/index.jsc
 *.bundle.cjs
 *.bundle.jsc
 
+# 步骤0.2 保护方案实测的临时目录
+spike
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
