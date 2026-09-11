@@ -168,9 +168,23 @@ export class H3cCommands implements VendorCommands {
       if (p.rip.defaultOriginate) cmds.push(' default-route originate');
       if (p.rip.redistribute?.length) p.rip.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
       if (p.rip.passiveInterfaces) p.rip.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
-      // Comware 的 RIP 认证在 rip 进程视图里，是全局的（和华为同一套写法）。
-      // 【不需要】authInterfaces —— 那是思科/锐捷才要的接口级引用。
-      // 旧实现把这两项整个丢了：勾了认证但配置里没有，交换机照常明文跑 RIP。
+      // ⚠️⚠️ 已知缺陷：下面两行放在 rip 进程视图里是【错的】，真机会拒绝执行。
+      // 详见根目录 KNOWN-ISSUES.md 第 1 条。这里保留错误实现是【有意】的决策
+      // （2026-09-11 用户选择「先记为已知问题，本轮先交付」），不是漏改。
+      //
+      // 正确形态是【接口视图 + rip 前缀】：
+      //   interface Vlan-interface10
+      //    rip authentication-mode md5 rfc2453 plain <密码>      ← 按 Comware V7
+      //    rip authentication-mode simple plain <密码>
+      // 依据：把 V7 命令参考里全部 39 条 RIP 视图命令、V5 的 35 条逐条枚举过，
+      // 【两个版本都没有任何认证命令存在于 RIP 视图】。所以这行不是「写法过时」，
+      // 是「视图就不对」，交换机只会报未知命令。
+      //
+      // 此注释上一版写的是「Comware 的 RIP 认证在 rip 进程视图里，是全局的
+      // （和华为同一套写法）」—— 两半都是错的，是我照着华为那份同样有问题的
+      // 实现抄的。教训：探针当时只检查「命令里出现了某个 needle」，而 needle
+      // 对「视图放错了」这类错误完全无感。present ≠ valid。
+      //
       // ⚠️ 'none' 是非空字符串、真值，不能只判 truthy。
       if (p.rip.authMode === 'simple') cmds.push(` authentication-mode simple ${p.rip.authKey || '123'}`);
       else if (p.rip.authMode === 'md5') cmds.push(` authentication-mode md5 usual ${p.rip.authKey || '123'}`);

@@ -184,6 +184,19 @@ export class HuaweiCommands implements VendorCommands {
       if (p.rip.passiveInterfaces) {
         p.rip.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
       }
+      // ⚠️⚠️ 已知缺陷：下面两行放在 rip 进程视图里是【错的】，真机会拒绝执行。
+      // 详见根目录 KNOWN-ISSUES.md 第 1 条。保留错误实现是【有意】的决策
+      // （2026-09-11 用户选择「先记为已知问题，本轮先交付」），不是漏改。
+      //
+      // 这行【改造前就存在】（基线 5e87d05 里就有），不是本次重构引入的。
+      // 正确形态是【接口视图 + rip 前缀】：
+      //   interface Vlanif10
+      //    rip authentication-mode md5 usual cipher <密码>
+      //    rip authentication-mode simple cipher <密码>
+      // 注意 VRP 的 md5 变体关键字是 usual/nonstandard，和 H3C 的
+      // rfc2453/rfc2082 【不是同一套】，别把两家的修正互相抄。
+      //
+      // ⚠️ 'none' 是非空字符串、真值，不能只判 truthy。
       if (p.rip.authMode === 'simple') cmds.push(` authentication-mode simple ${p.rip.authKey || '123'}`);
       else if (p.rip.authMode === 'md5') cmds.push(` authentication-mode md5 usual ${p.rip.authKey || '123'}`);
       cmds.push(' quit');
