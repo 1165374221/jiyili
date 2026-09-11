@@ -1,0 +1,13 @@
+# ── 行尾策略 ──────────────────────────────────────────────────────────
+# 开发机 core.autocrlf=true：索引里存 LF，checkout 时转成 CRLF。
+# 这对 golden 基线是致命的——它由 node 以 LF 写出、用 diff 逐字节比对，
+# 一旦被转成 CRLF，每一行都会被报成差异，回归网在全新 clone 上直接失效。
+# 所以凡是有"字节级"语义的文件，行尾必须显式定死，不能听凭 autocrlf。
+
+# 逐字节比对的 golden 基线：恒为 LF
+tests/golden.baseline.json text eol=lf
+
+# 批处理：cmd.exe 的常规行尾（autocrlf 本来也会转成 CRLF，这里显式定死，
+# 免得哪天 autocrlf 被关掉后 start.bat 悄悄退回 LF）
+*.bat text eol=crlf
+*.cmd text eol=crlf
