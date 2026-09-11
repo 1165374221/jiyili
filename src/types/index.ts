@@ -119,6 +119,15 @@ export interface RipConfig {
   networks: string[];
   authMode?: 'none' | 'simple' | 'md5';
   authKey?: string;
+  /**
+   * 应用认证的接口名，逗号或空格分隔（如 GigabitEthernet0/0/1, GigabitEthernet0/0/2）。
+   * - 思科/锐捷：**需要**。IOS/RGOS 的 RIP 认证没有进程级命令，只能先建 key chain
+   *   再在每个接口上引用；不填就只有一条没人引用的 key chain，认证不生效。
+   * - 华为/H3C：不需要。它们的 `authentication-mode` 就在 rip 进程视图里，是全局的。
+   * ⚠️ 别拿 passiveInterfaces 当这个用：静默接口恰恰是【不跑 RIP 邻居】的那些，
+   * 语义正好相反。
+   */
+  authInterfaces?: string;
   passiveInterfaces?: string;
   defaultOriginate: boolean;
   redistribute?: string[];

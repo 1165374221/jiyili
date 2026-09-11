@@ -212,6 +212,19 @@ export default function RoutingForm() {
               <input className="flex-1 min-w-[100px] border rounded px-2 py-1 text-xs" placeholder="静默接口" value={p.rip.passiveInterfaces || ''} onChange={(e) => emit({ ...p, rip: { ...p.rip!, passiveInterfaces: e.target.value } })} />
               <input className="w-24 border rounded px-2 py-1 text-xs" placeholder="重分发" value={p.rip.redistribute?.join(',') || ''} onChange={(e) => emit({ ...p, rip: { ...p.rip!, redistribute: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) } })} />
             </div>
+            {/* 认证：此前 RIP 这块【完全没有界面】，只能从 API 传 authMode/authKey，
+                而四个厂商里三个又把它们丢了 —— 整条链路是断的。 */}
+            <div className="flex gap-2 items-center flex-wrap">
+              <select className="w-24 border rounded px-2 py-1 text-xs" value={p.rip.authMode || ''} onChange={(e) => emit({ ...p, rip: { ...p.rip!, authMode: e.target.value as any } })}>
+                <option value="">无认证</option><option value="simple">明文认证</option><option value="md5">MD5 认证</option>
+              </select>
+              {(p.rip.authMode === 'simple' || p.rip.authMode === 'md5') && (
+                <>
+                  <input className="w-28 border rounded px-2 py-1 text-xs" placeholder="认证密钥" value={p.rip.authKey || ''} onChange={(e) => emit({ ...p, rip: { ...p.rip!, authKey: e.target.value } })} />
+                  <input className="flex-1 min-w-[180px] border rounded px-2 py-1 text-xs" placeholder="认证接口（思科/锐捷必填，逗号分隔）" value={p.rip.authInterfaces || ''} onChange={(e) => emit({ ...p, rip: { ...p.rip!, authInterfaces: e.target.value } })} />
+                </>
+              )}
+            </div>
             {p.rip.networks.map((n, i) => (
               <div key={i} className="flex gap-2">
                 <input className="flex-1 border rounded px-2 py-1 text-sm" placeholder="网络地址 如 192.168.1.0" value={n} onChange={(e) => { const ns = [...p.rip!.networks]; ns[i] = e.target.value; emit({ ...p, rip: { ...p.rip!, networks: ns } }); }} />

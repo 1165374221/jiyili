@@ -39,6 +39,7 @@ const S = {
   redis: 'SENTREDIS',     // 重分发
   iface: 'SENTIFACE',     // 接口名（v3 必需；思科/锐捷的接口级命令靠它落地）
   ripNet: 'SENTRIPNET',   // RIP 网络
+  authIface: 'SENTAUTHIF',// RIP 认证接口（只有思科/锐捷需要）
   asn: 64555,             // BGP AS 号
   bgpRid: '8.8.8.8',      // BGP Router ID
   nbrIp: 'SENTNBR',       // BGP 邻居 IP
@@ -55,6 +56,7 @@ function ripCfg(over: Partial<RipConfig> = {}): RoutingParams {
       networks: [S.ripNet],
       authMode: 'md5',
       authKey: S.key,
+      authInterfaces: S.authIface,
       passiveInterfaces: S.passive,
       defaultOriginate: true,
       redistribute: [S.redis],
@@ -95,8 +97,11 @@ function ospfCfg(over: Partial<OspfConfig> = {}): RoutingParams {
   };
 }
 
-// 待探的字段 → 该字段被填后应当在输出里出现的哨兵
-const PROBES: { field: string; sentinel: string | number; params: RoutingParams }[] = [
+// 待探的字段 → 该字段被填后应当在输出里出现的哨兵。
+// `only` 用来声明「这个字段本来就只有这几家需要」。它不是豁免 —— 是设计差异的
+// 显式记录：华为/H3C 的 RIP 认证在进程视图里，压根没有接口级的引用可写，
+// 拿思科的形状去要求它们，是把设计差异误判成丢参数（OSPF iface 已经踩过一次）。
+const PROBES: { field: string; sentinel: string | number; params: RoutingParams; only?: string[] }[] = [
   { field: 'ospf.processId', sentinel: S.processId, params: ospfCfg() },
   { field: 'ospf.routerId', sentinel: S.routerId, params: ospfCfg() },
   { field: 'ospf.area', sentinel: S.area, params: ospfCfg() },
@@ -129,9 +134,13 @@ const PROBES: { field: string; sentinel: string | number; params: RoutingParams 
   { field: 'rip.defaultOriginate', sentinel: 'originate', params: ripCfg() },
   { field: 'rip.redistribute', sentinel: S.redis, params: ripCfg() },
   { field: 'rip.passiveInterfaces', sentinel: S.passive, params: ripCfg() },
-  { field: 'rip.authMode(simple)', sentinel: 'simple', params: ripCfg({ authMode: 'simple' }) },
+  // ⚠️ 思科的「明文认证」关键字是 `text` 不是 simple（界面叫「明文认证」，
+  //    真机写 `ip rip authentication mode text`）。哨兵只写 simple 的话，
+  //    修好了也照样报 ❌ —— 就是文件开头记的那种误判。
+  { field: 'rip.authMode(simple)', sentinel: 'simple|mode text', params: ripCfg({ authMode: 'simple' }) },
   { field: 'rip.authMode(md5)', sentinel: 'md5|message-digest', params: ripCfg({ authMode: 'md5' }) },
   { field: 'rip.authKey', sentinel: S.key, params: ripCfg({ authMode: 'md5' }) },
+  { field: 'rip.authInterfaces', sentinel: S.authIface, params: ripCfg(), only: ['cisco', 'ruijie'] },
 
   // ---- BGP：表单暴露 AS / Router ID / 邻居 / 宣告网络 ----
   { field: 'bgp.asNumber', sentinel: S.asn, params: bgpCfg() },
@@ -147,6 +156,7 @@ const rows: { vendor: string; field: string; ok: boolean; out: string }[] = [];
 for (const [name, Ctor] of VENDORS) {
   const v = new Ctor();
   for (const p of PROBES) {
+    if (p.only && !p.only.includes(name)) continue;
     let out = '';
     try {
       out = v.generateRoutingConfig(p.params);
@@ -167,8 +177,10 @@ console.log('字段'.padEnd(30) + names.map((n) => n.padEnd(9)).join(''));
 console.log('-'.repeat(30 + names.length * 9));
 for (const f of fields) {
   const cells = names.map((n) => {
-    const r = rows.find((x) => x.vendor === n && x.field === f)!;
-    return (r.ok ? '✅' : '❌').padEnd(9);
+    const r = rows.find((x) => x.vendor === n && x.field === f);
+    // 被 only 排除的家显示「不适用」，而不是 ❌ —— 让「没探」和「探了没过」在表上
+    // 一眼能分开，否则这张表自己就在制造误判。
+    return (r ? (r.ok ? '✅' : '❌') : '·').padEnd(9);
   });
   console.log(f.padEnd(30) + cells.join(''));
 }
@@ -184,11 +196,10 @@ for (const d of dropped) {
 // KNOWN_OPEN 是【尚未修】的项，不是「可以忽略」的项。列出来是为了让这个脚本能当
 // 门禁用：一旦出现列表之外的新丢弃，退出码非 0。修好之后必须把条目删掉 ——
 // 下面会检查列表是否过期，防止「修完了但名单没清」导致门禁悄悄失效。
-const KNOWN_OPEN = new Set([
-  'h3c/rip.authMode(simple)', 'h3c/rip.authMode(md5)', 'h3c/rip.authKey',
-  'cisco/rip.authMode(simple)', 'cisco/rip.authMode(md5)', 'cisco/rip.authKey',
-  'ruijie/rip.authMode(simple)', 'ruijie/rip.authMode(md5)', 'ruijie/rip.authKey',
-]);
+//
+// 现已清空：RIP 认证的 9 项（h3c/cisco/ruijie 的 authMode×2 + authKey）已修。
+// 保持为空是对的 —— 这个集合一旦长期非空，门禁就慢慢退化成摆设。
+const KNOWN_OPEN = new Set<string>([]);
 
 const keys = new Set(dropped.map((d) => `${d.vendor}/${d.field}`));
 const unexpected = [...keys].filter((k) => !KNOWN_OPEN.has(k));
@@ -199,5 +210,7 @@ if (unexpected.length) {
   console.error(`\n❌ 出现 ${unexpected.length} 项【新的】静默丢弃（不在已知名单内）：${unexpected.join('、')}`);
   process.exitCode = 1;
 } else {
-  console.log(`\n✅ 没有已知名单之外的静默丢弃（尚有 ${KNOWN_OPEN.size} 项待修，见上表 RIP 认证）`);
+  console.log(KNOWN_OPEN.size
+    ? `\n✅ 没有已知名单之外的静默丢弃（尚有 ${KNOWN_OPEN.size} 项待修，见上表）`
+    : '\n✅ 没有静默丢弃（已知名单为空）');
 }

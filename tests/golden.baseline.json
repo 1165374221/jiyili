@@ -268,6 +268,85 @@
     {
       "kind": "single",
       "vendor": "huawei",
+      "type": "routing",
+      "name": "RIP认证MD5(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "authInterfaces": "GigabitEthernet0/0/1,GigabitEthernet0/0/2",
+          "passiveInterfaces": "GigabitEthernet0/0/9",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 192.168.1.0\n silent-interface GigabitEthernet0/0/9\n authentication-mode md5 usual ripkey\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "RIP认证明文(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "10.0.0.0"
+          ],
+          "authMode": "simple",
+          "authKey": "plainrip",
+          "authInterfaces": "GigabitEthernet0/0/3",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 10.0.0.0\n authentication-mode simple plainrip\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "RIP认证(缺接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 172.16.0.0\n authentication-mode md5 usual ripkey\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "RIP无认证(none)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "none",
+          "authKey": "shouldnotappear",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 172.16.0.0\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
       "type": "linkagg",
       "name": "lacp",
       "params": {
@@ -991,6 +1070,85 @@
         }
       },
       "command": "system-view\nrip 1\n version 2\n network 192.168.1.0\n default-route originate\n import-route static\n silent-interface GigabitEthernet0/0/1\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "RIP认证MD5(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "authInterfaces": "GigabitEthernet0/0/1,GigabitEthernet0/0/2",
+          "passiveInterfaces": "GigabitEthernet0/0/9",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 192.168.1.0\n silent-interface GigabitEthernet0/0/9\n authentication-mode md5 usual ripkey\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "RIP认证明文(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "10.0.0.0"
+          ],
+          "authMode": "simple",
+          "authKey": "plainrip",
+          "authInterfaces": "GigabitEthernet0/0/3",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 10.0.0.0\n authentication-mode simple plainrip\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "RIP认证(缺接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 172.16.0.0\n authentication-mode md5 usual ripkey\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "RIP无认证(none)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "none",
+          "authKey": "shouldnotappear",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 172.16.0.0\n quit"
     },
     {
       "kind": "single",
@@ -1722,6 +1880,85 @@
     {
       "kind": "single",
       "vendor": "cisco",
+      "type": "routing",
+      "name": "RIP认证MD5(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "authInterfaces": "GigabitEthernet0/0/1,GigabitEthernet0/0/2",
+          "passiveInterfaces": "GigabitEthernet0/0/9",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 192.168.1.0\n passive-interface GigabitEthernet0/0/9\n exit\nkey chain RIP-AUTH\n key 1\n  key-string ripkey\n exit\n exit\ninterface GigabitEthernet0/0/1\n ip rip authentication key-chain RIP-AUTH\n ip rip authentication mode md5\n exit\ninterface GigabitEthernet0/0/2\n ip rip authentication key-chain RIP-AUTH\n ip rip authentication mode md5\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "RIP认证明文(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "10.0.0.0"
+          ],
+          "authMode": "simple",
+          "authKey": "plainrip",
+          "authInterfaces": "GigabitEthernet0/0/3",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 10.0.0.0\n exit\nkey chain RIP-AUTH\n key 1\n  key-string plainrip\n exit\n exit\ninterface GigabitEthernet0/0/3\n ip rip authentication key-chain RIP-AUTH\n ip rip authentication mode text\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "RIP认证(缺接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 172.16.0.0\n exit\nkey chain RIP-AUTH\n key 1\n  key-string ripkey\n exit\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "RIP无认证(none)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "none",
+          "authKey": "shouldnotappear",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 172.16.0.0\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
       "type": "linkagg",
       "name": "lacp",
       "params": {
@@ -2445,6 +2682,85 @@
         }
       },
       "command": "configure terminal\nrouter rip\n version 2\n default-information originate\n redistribute static\n network 192.168.1.0\n passive-interface GigabitEthernet0/0/1\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "RIP认证MD5(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "authInterfaces": "GigabitEthernet0/0/1,GigabitEthernet0/0/2",
+          "passiveInterfaces": "GigabitEthernet0/0/9",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 192.168.1.0\n passive-interface GigabitEthernet0/0/9\n exit\nkey chain RIP-AUTH\n key 1\n  key-string ripkey\n exit\n exit\ninterface GigabitEthernet0/0/1\n ip rip authentication key-chain RIP-AUTH\n ip rip authentication mode md5\n exit\ninterface GigabitEthernet0/0/2\n ip rip authentication key-chain RIP-AUTH\n ip rip authentication mode md5\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "RIP认证明文(带接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "10.0.0.0"
+          ],
+          "authMode": "simple",
+          "authKey": "plainrip",
+          "authInterfaces": "GigabitEthernet0/0/3",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 10.0.0.0\n exit\nkey chain RIP-AUTH\n key 1\n  key-string plainrip\n exit\n exit\ninterface GigabitEthernet0/0/3\n ip rip authentication key-chain RIP-AUTH\n ip rip authentication mode text\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "RIP认证(缺接口)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "md5",
+          "authKey": "ripkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 172.16.0.0\n exit\nkey chain RIP-AUTH\n key 1\n  key-string ripkey\n exit\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "RIP无认证(none)",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "172.16.0.0"
+          ],
+          "authMode": "none",
+          "authKey": "shouldnotappear",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n network 172.16.0.0\n exit\nend"
     },
     {
       "kind": "single",

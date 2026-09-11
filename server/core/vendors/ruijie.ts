@@ -16,6 +16,27 @@ function ruijiePassiveInterfaces(cmds: string[], list?: string) {
   list.split(/[,\s]+/).filter(Boolean).forEach((i) => cmds.push(` passive-interface ${i}`));
 }
 
+// 同 Cisco：RGOS 的 RIP 认证也是 key chain + 接口引用两步，没有进程级命令。
+const RIP_KEY_CHAIN = 'RIP-AUTH';
+
+function ruijieRipAuth(mode: 'simple' | 'md5', key: string, interfaces?: string): string[] {
+  const out: string[] = [];
+  out.push(`key chain ${RIP_KEY_CHAIN}`);
+  out.push(' key 1');
+  out.push(`  key-string ${key}`);
+  out.push(' exit');
+  out.push(' exit');
+  // 见 types 里的说明：没有接口就只是条没人引用的 key chain，认证不生效。
+  if (!interfaces) return out;
+  interfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => {
+    out.push(`interface ${iface}`);
+    out.push(` ip rip authentication key-chain ${RIP_KEY_CHAIN}`);
+    out.push(` ip rip authentication mode ${mode === 'md5' ? 'md5' : 'text'}`);
+    out.push(' exit');
+  });
+  return out;
+}
+
 export class RuijieCommands implements VendorCommands {
   name = '锐捷 Ruijie';
   portPrefix = 'GigabitEthernet 0/';
@@ -203,6 +224,13 @@ export class RuijieCommands implements VendorCommands {
       p.rip.networks.forEach((n) => cmds.push(` network ${n}`));
       if (p.rip.passiveInterfaces) p.rip.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` passive-interface ${iface}`));
       cmds.push(' exit');
+
+      // 旧实现把 authMode/authKey 整个丢掉了（见 cisco.ts 同一处的说明）。
+      // ⚠️ 'none' 是非空字符串、真值，不能只判 truthy。
+      const ripAuth = p.rip.authMode;
+      if ((ripAuth === 'simple' || ripAuth === 'md5') && p.rip.authKey) {
+        cmds.push(...ruijieRipAuth(ripAuth, p.rip.authKey, p.rip.authInterfaces));
+      }
     }
 
     cmds.push('end');

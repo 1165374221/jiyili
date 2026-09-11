@@ -168,6 +168,12 @@ export class H3cCommands implements VendorCommands {
       if (p.rip.defaultOriginate) cmds.push(' default-route originate');
       if (p.rip.redistribute?.length) p.rip.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
       if (p.rip.passiveInterfaces) p.rip.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
+      // Comware 的 RIP 认证在 rip 进程视图里，是全局的（和华为同一套写法）。
+      // 【不需要】authInterfaces —— 那是思科/锐捷才要的接口级引用。
+      // 旧实现把这两项整个丢了：勾了认证但配置里没有，交换机照常明文跑 RIP。
+      // ⚠️ 'none' 是非空字符串、真值，不能只判 truthy。
+      if (p.rip.authMode === 'simple') cmds.push(` authentication-mode simple ${p.rip.authKey || '123'}`);
+      else if (p.rip.authMode === 'md5') cmds.push(` authentication-mode md5 usual ${p.rip.authKey || '123'}`);
       cmds.push(' quit');
     }
 

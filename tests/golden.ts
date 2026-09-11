@@ -65,6 +65,16 @@ const TYPICAL: Case[] = [
   { type: 'routing', name: 'OSPFv3(多接口多区域)', params: { staticRoutes: [], ospf: { processId: 10, routerId: '4.4.4.4', area: '0', networks: [{ network: '', wildcard: '', iface: 'GigabitEthernet0/0/2' }, { network: '', wildcard: '', area: '2', iface: 'GigabitEthernet0/0/3' }], defaultOriginate: false, isV3: true } } },
   { type: 'routing', name: 'BGP', params: { staticRoutes: [], bgp: { asNumber: 65001, routerId: '5.5.5.5', neighbors: [{ ip: '10.0.0.2', remoteAs: 65002 }], networks: [{ network: '192.168.1.0', mask: '255.255.255.0' }] } } },
   { type: 'routing', name: 'RIPv2', params: { staticRoutes: [], rip: { version: 2, networks: ['192.168.1.0'], passiveInterfaces: 'GigabitEthernet0/0/1', defaultOriginate: true, redistribute: ['static'] } } },
+  // RIP 认证：四家分两种形状 —— 华为/H3C 在 rip 进程视图里一条 authentication-mode
+  // 搞定，思科/锐捷要 key chain + 逐接口引用。这两条用例正是用来钉住这个分叉的。
+  { type: 'routing', name: 'RIP认证MD5(带接口)', params: { staticRoutes: [], rip: { version: 2, networks: ['192.168.1.0'], authMode: 'md5', authKey: 'ripkey', authInterfaces: 'GigabitEthernet0/0/1,GigabitEthernet0/0/2', passiveInterfaces: 'GigabitEthernet0/0/9', defaultOriginate: false } } },
+  { type: 'routing', name: 'RIP认证明文(带接口)', params: { staticRoutes: [], rip: { version: 2, networks: ['10.0.0.0'], authMode: 'simple', authKey: 'plainrip', authInterfaces: 'GigabitEthernet0/0/3', defaultOriginate: false } } },
+  // 勾了认证但没填接口：思科/锐捷只出 key chain（合法，但没人引用 = 认证不生效）。
+  // 钉住这个「部分生效」的行为，免得以后有人以为它是完整的。
+  { type: 'routing', name: 'RIP认证(缺接口)', params: { staticRoutes: [], rip: { version: 2, networks: ['172.16.0.0'], authMode: 'md5', authKey: 'ripkey', defaultOriginate: false } } },
+  // authMode 显式 'none'：'none' 是非空字符串、真值，不能只判 truthy —— 这条用例
+  // 就是防止有人把条件写成 `if (p.rip.authMode)` 而给「无认证」也下发认证。
+  { type: 'routing', name: 'RIP无认证(none)', params: { staticRoutes: [], rip: { version: 2, networks: ['172.16.0.0'], authMode: 'none', authKey: 'shouldnotappear', defaultOriginate: false } } },
   { type: 'linkagg', name: 'lacp', params: { groupId: 1, mode: 'lacp', ports: '1-4', loadBalance: 'src-dst-ip' } },
   { type: 'stp', name: 'mstp根桥', params: { mode: 'mstp', rootBridge: true, edgePorts: '1-5', bpduGuard: true } },
   { type: 'aaa', name: '本地用户', params: { authMode: 'local', localUsers: [{ username: 'admin', password: 'Admin@123', privilege: 15, serviceTypes: ['ssh', 'telnet'] }], enableTelnet: true, enableSsh: true } },

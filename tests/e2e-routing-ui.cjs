@@ -189,6 +189,56 @@ app.whenReady().then(async () => {
       two && /interface GigabitEthernet0\/0\/1[\s\S]*ospfv3 1 area/.test(two)
         && /interface GigabitEthernet0\/0\/2[\s\S]*ospfv3 1 area/.test(two),
       `预览：\n${(two || '').split('\n').map((l) => '       ' + l).join('\n')}`);
+
+    // ---------- 6. RIP 认证 ----------
+    // 这块此前【完全没有界面】：authMode/authKey 只有 API 能传，而四个厂商里三个
+    // 又把它们丢了。现在补了控件，接线必须验 —— 生成侧的 golden 用的是直接传参，
+    // 证明不了「用户点得到、填得进」。
+    check('前置：点到了「+ 启用 RIP」和「+ 添加网络」',
+      (await js(win, `window.__clickText('+ 启用 RIP')`)) && (await js(win, `window.__clickText('+ 添加网络')`)),
+      'RIP 面板没打开');
+    await sleep(300);
+    check('RIP 有认证下拉（此前整个表单里没有这个控件）',
+      await js(win, `window.__hasSelectWithOption('MD5 认证')`),
+      'RIP 认证下拉不存在');
+    check('未选认证时，密钥/认证接口两个框都不显示',
+      !(await js(win, `window.__hasPlaceholder('认证密钥')`))
+        && !(await js(win, `window.__hasPlaceholder('认证接口')`)),
+      '没选认证却已经出现密钥/接口框');
+
+    await js(win, `window.__setSelectByOption('MD5 认证', 'md5')`);
+    await sleep(300);
+    check('选了认证后出现密钥与「认证接口」框',
+      (await js(win, `window.__hasPlaceholder('认证密钥')`))
+        && (await js(win, `window.__hasPlaceholder('认证接口')`)),
+      '选了 MD5 认证但密钥/认证接口框没出现');
+
+    await js(win, `window.__setByPlaceholder('网络地址 如', '192.168.1.0')`);
+    await js(win, `window.__setByPlaceholder('认证密钥', 'myrippass')`);
+    await js(win, `window.__setByPlaceholder('认证接口', 'GigabitEthernet0/0/7')`);
+    await js(win, `window.__setVendor('cisco')`);
+    await sleep(1200);
+    const ripOut = await preview(win);
+    check('思科：key chain + 接口引用两步都出，明文认证用真机的 text 关键字',
+      ripOut && /key chain RIP-AUTH[\s\S]*key-string myrippass/.test(ripOut)
+        && /interface GigabitEthernet0\/0\/7[\s\S]*ip rip authentication key-chain RIP-AUTH[\s\S]*ip rip authentication mode md5/.test(ripOut),
+      `预览：\n${(ripOut || '').split('\n').map((l) => '       ' + l).join('\n')}`);
+
+    // 把认证退回「无认证」，key chain 必须消失。
+    //
+    // ⚠️ 别把这条当成「'none' 真值陷阱」的守卫 —— 它不是。界面这个选项的 value 是
+    // 空串 ''，空串本来就是假值；就算代码写成 `if (p.rip.authMode)` 也照样通过。
+    // 真正能钉住那个陷阱的是 golden 里的 `RIP无认证(none)` 用例：它直接传字符串
+    // 'none'（非空、真值），配上 authKey='shouldnotappear'，一旦条件写成真值判断，
+    // 'shouldnotappear' 就会出现在输出里，逐字节比对立刻红。
+    // 两条各管一段：这里管「界面点得到」，golden 管「'none' 不被当成有认证」。
+    await js(win, `window.__setSelectByOption('MD5 认证', '')`);
+    await sleep(1200);
+    const noAuth = await preview(win);
+    check('退回「无认证」后 key chain 与密钥从预览里消失',
+      noAuth && !noAuth.includes('key chain') && !noAuth.includes('myrippass')
+        && !noAuth.includes('ip rip authentication'),
+      `预览：\n${(noAuth || '').split('\n').map((l) => '       ' + l).join('\n')}`);
   } catch (e) {
     check('测试脚本自身未抛异常', false, String(e && e.stack || e));
   }

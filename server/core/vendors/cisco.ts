@@ -18,6 +18,34 @@ function ciscoPassiveInterfaces(cmds: string[], list?: string) {
   list.split(/[,\s]+/).filter(Boolean).forEach((i) => cmds.push(` passive-interface ${i}`));
 }
 
+// IOS 的 RIP 认证没有进程级命令，只有「建 key chain」+「在接口上引用」两步。
+// 链名是固定的 —— 本工具一次只配一套 RIP 认证，用户没有给链取名的入口，
+// 随机/派生名字只会让配置更难读。
+const RIP_KEY_CHAIN = 'RIP-AUTH';
+
+/**
+ * 生成 RIP 认证配置。参数用到的 authMode 已排除 'none'/'none' 空值，见调用处。
+ * `simple` 在 IOS 上的关键字是 `text`（不是 simple），所以这里必须映射一次。
+ */
+function ciscoRipAuth(mode: 'simple' | 'md5', key: string, interfaces?: string): string[] {
+  const out: string[] = [];
+  out.push(`key chain ${RIP_KEY_CHAIN}`);
+  out.push(' key 1');
+  out.push(`  key-string ${key}`);
+  out.push(' exit');
+  out.push(' exit');
+  // 没给接口就只留 key chain：它是合法配置，也是「用户想配认证」的痕迹，
+  // 但【认证并不生效】—— 没有任何接口引用它。界面上这一栏有明确提示。
+  if (!interfaces) return out;
+  interfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => {
+    out.push(`interface ${iface}`);
+    out.push(` ip rip authentication key-chain ${RIP_KEY_CHAIN}`);
+    out.push(` ip rip authentication mode ${mode === 'md5' ? 'md5' : 'text'}`);
+    out.push(' exit');
+  });
+  return out;
+}
+
 export class CiscoCommands implements VendorCommands {
   name = 'Cisco 思科';
   portPrefix = 'GigabitEthernet0/';
@@ -143,7 +171,8 @@ export class CiscoCommands implements VendorCommands {
       if (p.ospf.isV3) {
         // 旧实现在这里出的是 `interface ${n.network}` —— 把【网络地址】当接口名用，
         // 于是生成了 `interface 2001:db8::` 这种命令。根因是数据模型只有
-        // {网络地址, 通配符}，而 v3 是接口级协议。现在读 n.iface（旧数据回落 network）。
+        // {网络地址, 通配符}，而 v3 是接口级协议。现在读 n.iface，并且【不回落】到
+        // network —— 回落就等于把这个 bug 原样带回来（见下面的展开说明）。
         cmds.push('ipv6 unicast-routing');   // 起 ipv6 router ospf 的前提
         cmds.push(`ipv6 router ospf ${pid}`);
         cmds.push(` router-id ${p.ospf.routerId}`);
@@ -209,6 +238,14 @@ export class CiscoCommands implements VendorCommands {
       p.rip.networks.forEach((n) => cmds.push(` network ${n}`));
       if (p.rip.passiveInterfaces) p.rip.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` passive-interface ${iface}`));
       cmds.push(' exit');
+
+      // 旧实现把 authMode/authKey 整个丢掉了：用户勾了认证、界面收下了、生成的
+      // 配置里一个字都没有，交换机照常明文跑 RIP。
+      // ⚠️ 这里不能写 `if (p.rip.authMode)`：'none' 是【非空字符串】，真值。
+      const ripAuth = p.rip.authMode;
+      if ((ripAuth === 'simple' || ripAuth === 'md5') && p.rip.authKey) {
+        cmds.push(...ciscoRipAuth(ripAuth, p.rip.authKey, p.rip.authInterfaces));
+      }
     }
 
     cmds.push('end');
