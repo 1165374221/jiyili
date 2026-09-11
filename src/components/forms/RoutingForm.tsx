@@ -143,23 +143,50 @@ export default function RoutingForm() {
                 onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, area: e.target.value } })}
               />
             </div>
-            {p.ospf.networks.map((n, i) => (
-              <div key={i} className="flex gap-2">
-                <input className="flex-1 border rounded px-2 py-1 text-sm" placeholder="网络地址" value={n.network} onChange={(e) => { const nets = [...p.ospf!.networks]; nets[i] = { ...nets[i], network: e.target.value }; emit({ ...p, ospf: { ...p.ospf!, networks: nets } }); }} />
-                <input className="flex-1 border rounded px-2 py-1 text-sm" placeholder="通配符掩码" value={n.wildcard} onChange={(e) => { const nets = [...p.ospf!.networks]; nets[i] = { ...nets[i], wildcard: e.target.value }; emit({ ...p, ospf: { ...p.ospf!, networks: nets } }); }} />
-                <button onClick={() => { const nets = p.ospf!.networks.filter((_, j) => j !== i); emit({ ...p, ospf: { ...p.ospf!, networks: nets } }); }} className="text-red-500 text-xs hover:underline">删除</button>
-              </div>
-            ))}
+            {p.ospf.networks.map((n, i) => {
+              // 每行改一个字段就整体重新 emit。三处 onChange 逻辑一样，抽出来免得
+              // 复制粘贴时漏掉某一项的 set。
+              const setNet = (patch: Partial<typeof n>) => {
+                const nets = [...p.ospf!.networks];
+                nets[i] = { ...nets[i], ...patch };
+                emit({ ...p, ospf: { ...p.ospf!, networks: nets } });
+              };
+              // OSPFv3 没有 network 语句，协议挂在接口上，所以要填的是【接口名】；
+              // v2 才是「网络地址 + 通配符」。切到 v3 时把前两个框换掉，而不是留着
+              // 让人填了不用 —— 那正是这轮要消灭的「填了等于没填」。
+              return p.ospf!.isV3 ? (
+                <div key={i} className="flex gap-2">
+                  <input className="flex-1 border rounded px-2 py-1 text-sm" placeholder="接口名 如 GigabitEthernet0/0/1" value={n.iface || ''} onChange={(e) => setNet({ iface: e.target.value })} />
+                  <button onClick={() => { const nets = p.ospf!.networks.filter((_, j) => j !== i); emit({ ...p, ospf: { ...p.ospf!, networks: nets } }); }} className="text-red-500 text-xs hover:underline">删除</button>
+                </div>
+              ) : (
+                <div key={i} className="flex gap-2">
+                  <input className="flex-1 border rounded px-2 py-1 text-sm" placeholder="网络地址" value={n.network} onChange={(e) => setNet({ network: e.target.value })} />
+                  <input className="flex-1 border rounded px-2 py-1 text-sm" placeholder="通配符掩码" value={n.wildcard} onChange={(e) => setNet({ wildcard: e.target.value })} />
+                  <input className="flex-1 border rounded px-2 py-1 text-sm" placeholder="接口(可选，思科/锐捷的密钥与网络类型要用)" value={n.iface || ''} onChange={(e) => setNet({ iface: e.target.value })} />
+                  <button onClick={() => { const nets = p.ospf!.networks.filter((_, j) => j !== i); emit({ ...p, ospf: { ...p.ospf!, networks: nets } }); }} className="text-red-500 text-xs hover:underline">删除</button>
+                </div>
+              );
+            })}
             {/* OSPF advanced */}
             <div className="flex gap-2 flex-wrap items-center border-t pt-2 mt-1">
-              <select className="w-24 border rounded px-2 py-1 text-xs" value={p.ospf.networkType || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, networkType: e.target.value as any } })}>
-                <option value="">网络类型</option><option value="broadcast">Broadcast</option><option value="nbma">NBMA</option><option value="p2p">P2P</option><option value="p2mp">P2MP</option>
-              </select>
+              {/* 网络类型与认证在 v3 下不适用（OSPFv3 的认证是 IPsec，与本工具的
+                  生成逻辑不是一回事）。v3 时直接【隐藏】这两个控件，而不是留着让
+                  人填 —— 填了不生效，就是这轮在消灭的「静默丢弃」。 */}
+              {!p.ospf.isV3 && (
+                <select className="w-24 border rounded px-2 py-1 text-xs" value={p.ospf.networkType || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, networkType: e.target.value as any } })}>
+                  <option value="">网络类型</option><option value="broadcast">Broadcast</option><option value="nbma">NBMA</option><option value="p2p">P2P</option><option value="p2mp">P2MP</option>
+                </select>
+              )}
               <input className="w-16 border rounded px-2 py-1 text-xs" type="number" placeholder="开销" value={p.ospf.cost || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, cost: Number(e.target.value) } })} />
-              <select className="w-20 border rounded px-2 py-1 text-xs" value={p.ospf.authMode || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, authMode: e.target.value as any } })}>
-                <option value="">无认证</option><option value="simple">明文</option><option value="md5">MD5</option>
-              </select>
-              {p.ospf.authMode && <input className="w-20 border rounded px-2 py-1 text-xs" placeholder="密钥" value={p.ospf.authKey || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, authKey: e.target.value } })} />}
+              {!p.ospf.isV3 && (
+                <>
+                  <select className="w-20 border rounded px-2 py-1 text-xs" value={p.ospf.authMode || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, authMode: e.target.value as any } })}>
+                    <option value="">无认证</option><option value="simple">明文</option><option value="md5">MD5</option>
+                  </select>
+                  {p.ospf.authMode && <input className="w-20 border rounded px-2 py-1 text-xs" placeholder="密钥" value={p.ospf.authKey || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, authKey: e.target.value } })} />}
+                </>
+              )}
               <input className="flex-1 min-w-[100px] border rounded px-2 py-1 text-xs" placeholder="静默接口(逗号分割)" value={p.ospf.passiveInterfaces || ''} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, passiveInterfaces: e.target.value } })} />
               <label className="text-xs flex items-center gap-1"><input type="checkbox" checked={p.ospf.defaultOriginate} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, defaultOriginate: e.target.checked } })} />缺省路由</label>
               <label className="text-xs flex items-center gap-1"><input type="checkbox" checked={p.ospf.isV3 || false} onChange={(e) => emit({ ...p, ospf: { ...p.ospf!, isV3: e.target.checked } })} />OSPFv3</label>

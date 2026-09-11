@@ -2,6 +2,20 @@ import type { VendorCommands } from './base';
 import { cidrToMask } from './base';
 import type { VlanParams, VlanifParams, AclParams, RoutingParams, LinkAggParams, StpParams, AaaParams, NatParams, QosParams, VxlanParams, StackParams, VrrpParams, DhcpParams, FwPolicyParams, IfaceParams, PortSecParams, SnmpParams, NtpParams, SyslogParams, LldpParams, QinqParams } from '../../../src/types';
 
+// 同 Cisco：OSPF 网络类型是接口级命令，且 NBMA 的关键字是 non-broadcast。
+const RUIJIE_NETWORK_TYPE: Record<string, string> = {
+  broadcast: 'broadcast',
+  nbma: 'non-broadcast',
+  p2p: 'point-to-point',
+  p2mp: 'point-to-multipoint',
+};
+
+// 静默接口逐条下发，不要用 `passive-interface default`（那是全部静默）。
+function ruijiePassiveInterfaces(cmds: string[], list?: string) {
+  if (!list) return;
+  list.split(/[,\s]+/).filter(Boolean).forEach((i) => cmds.push(` passive-interface ${i}`));
+}
+
 export class RuijieCommands implements VendorCommands {
   name = '锐捷 Ruijie';
   portPrefix = 'GigabitEthernet 0/';
@@ -122,16 +136,55 @@ export class RuijieCommands implements VendorCommands {
     });
 
     if (p.ospf) {
-      const ospfCmd = p.ospf.isV3 ? 'ipv6 router ospf' : 'router ospf';
-      cmds.push(`${ospfCmd} ${p.ospf.processId}`);
-      cmds.push(` router-id ${p.ospf.routerId}`);
-      if (p.ospf.defaultOriginate) cmds.push(' default-information originate always');
-      if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` redistribute ${r} subnets`));
-      if (p.ospf.cost) cmds.push(` auto-cost reference-bandwidth ${p.ospf.cost}`);
-      if (p.ospf.passiveInterfaces) cmds.push(' passive-interface default');
-      if (p.ospf.authMode === 'md5') cmds.push(` area ${p.ospf.area} authentication message-digest`);
-      p.ospf.networks.forEach((n) => cmds.push(` network ${n.network} ${n.wildcard} area ${n.area || p.ospf!.area}`));
-      cmds.push(' exit');
+      const pid = p.ospf.processId;
+      if (p.ospf.isV3) {
+        // 旧实现只把进程命令换成了 `ipv6 router ospf`，后面照样出 v2 的
+        // `network ... area ...` —— 命令名对了，配置内容还是 v2 的。
+        cmds.push('ipv6 unicast-routing');
+        cmds.push(`ipv6 router ospf ${pid}`);
+        cmds.push(` router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-information originate always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` redistribute ${r}`));
+        ruijiePassiveInterfaces(cmds, p.ospf.passiveInterfaces);
+        cmds.push(' exit');
+
+        p.ospf.networks.forEach((n) => {
+          // 只认 iface，不拿 network 兜底（network 是网络地址，不是接口名）。
+          const iface = n.iface;
+          if (!iface) return;
+          cmds.push(`interface ${iface}`);
+          cmds.push(` ipv6 ospf ${pid} area ${n.area || p.ospf!.area}`);
+          cmds.push(' exit');
+        });
+      } else {
+        cmds.push(`router ospf ${pid}`);
+        cmds.push(` router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-information originate always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` redistribute ${r} subnets`));
+        if (p.ospf.cost) cmds.push(` auto-cost reference-bandwidth ${p.ospf.cost}`);
+        // 同思科：`passive-interface default` 是「全部静默」，与用户意图相反。
+        ruijiePassiveInterfaces(cmds, p.ospf.passiveInterfaces);
+        if (p.ospf.authMode === 'md5') cmds.push(` area ${p.ospf.area} authentication message-digest`);
+        else if (p.ospf.authMode === 'simple') cmds.push(` area ${p.ospf.area} authentication`);
+        p.ospf.networks.forEach((n) => {
+          cmds.push(` network ${n.network} ${n.wildcard} area ${n.area || p.ospf!.area}`);
+        });
+        cmds.push(' exit');
+
+        // 接口级：认证密钥 + 网络类型。锐捷 RGOS 与 Cisco 同构，
+        // 但旧实现把网络类型【整条丢掉】了（四个厂商里只有它丢）。
+        p.ospf.networks.forEach((n) => {
+          if (!n.iface) return;
+          const lines: string[] = [];
+          if (p.ospf!.authKey && p.ospf!.authMode === 'md5') lines.push(` ip ospf message-digest-key 1 md5 ${p.ospf!.authKey}`);
+          else if (p.ospf!.authKey && p.ospf!.authMode === 'simple') lines.push(` ip ospf authentication-key ${p.ospf!.authKey}`);
+          if (p.ospf!.networkType) lines.push(` ip ospf network ${RUIJIE_NETWORK_TYPE[p.ospf!.networkType]}`);
+          if (!lines.length) return;
+          cmds.push(`interface ${n.iface}`);
+          cmds.push(...lines);
+          cmds.push(' exit');
+        });
+      }
     }
 
     if (p.bgp) {

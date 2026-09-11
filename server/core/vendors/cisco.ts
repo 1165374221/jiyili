@@ -2,6 +2,22 @@ import type { VendorCommands } from './base';
 import { cidrToMask } from './base';
 import type { VlanParams, VlanifParams, AclParams, RoutingParams, LinkAggParams, StpParams, AaaParams, NatParams, QosParams, VxlanParams, StackParams, VrrpParams, DhcpParams, FwPolicyParams, IfaceParams, PortSecParams, SnmpParams, NtpParams, SyslogParams, LldpParams, QinqParams } from '../../../src/types';
 
+// OSPF 网络类型在本产品里的取值 → Cisco IOS 的接口级写法。
+// 注意 NBMA：Cisco 没有 `nbma` 这个关键字，对应的是 `non-broadcast`。
+const CISCO_NETWORK_TYPE: Record<string, string> = {
+  broadcast: 'broadcast',
+  nbma: 'non-broadcast',
+  p2p: 'point-to-point',
+  p2mp: 'point-to-multipoint',
+};
+
+// 静默接口：逐条下发用户点名的那几个接口。
+// 不要写成 `passive-interface default` —— 那条是「所有接口都静默」，语义正好相反。
+function ciscoPassiveInterfaces(cmds: string[], list?: string) {
+  if (!list) return;
+  list.split(/[,\s]+/).filter(Boolean).forEach((i) => cmds.push(` passive-interface ${i}`));
+}
+
 export class CiscoCommands implements VendorCommands {
   name = 'Cisco 思科';
   portPrefix = 'GigabitEthernet0/';
@@ -123,27 +139,58 @@ export class CiscoCommands implements VendorCommands {
     });
 
     if (p.ospf) {
-      const ospfCmd = p.ospf.isV3 ? 'ipv6 router ospf' : 'router ospf';
-      cmds.push(`${ospfCmd} ${p.ospf.processId}`);
-      cmds.push(` router-id ${p.ospf.routerId}`);
-      if (p.ospf.defaultOriginate) cmds.push(' default-information originate always');
-      if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` redistribute ${r} subnets`));
-      if (!p.ospf.isV3 && p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
-      if (p.ospf.cost) cmds.push(` auto-cost reference-bandwidth ${p.ospf.cost}`);
-      if (p.ospf.passiveInterfaces) cmds.push(' passive-interface default');
-      if (!p.ospf.isV3 && p.ospf.authMode === 'md5') cmds.push(` area ${p.ospf.area} authentication message-digest`);
+      const pid = p.ospf.processId;
       if (p.ospf.isV3) {
+        // 旧实现在这里出的是 `interface ${n.network}` —— 把【网络地址】当接口名用，
+        // 于是生成了 `interface 2001:db8::` 这种命令。根因是数据模型只有
+        // {网络地址, 通配符}，而 v3 是接口级协议。现在读 n.iface（旧数据回落 network）。
+        cmds.push('ipv6 unicast-routing');   // 起 ipv6 router ospf 的前提
+        cmds.push(`ipv6 router ospf ${pid}`);
+        cmds.push(` router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-information originate always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` redistribute ${r}`));
+        ciscoPassiveInterfaces(cmds, p.ospf.passiveInterfaces);
+        cmds.push(' exit');
+
         p.ospf.networks.forEach((n) => {
-          if (n.network) cmds.push(`interface ${n.network}`);
-          cmds.push(` ipv6 ospf ${p.ospf!.processId} area ${n.area || p.ospf!.area}`);
-          if (n.network) cmds.push(' exit');
+          // 只认 iface，不拿 network 兜底：network 是【网络地址】不是接口名，
+          // 兜底就等于继续产出 `interface 2001:db8::`。留空就是留空。
+          const iface = n.iface;
+          if (!iface) return;
+          cmds.push(`interface ${iface}`);
+          cmds.push(` ipv6 ospf ${pid} area ${n.area || p.ospf!.area}`);
+          cmds.push(' exit');
         });
       } else {
+        cmds.push(`router ospf ${pid}`);
+        cmds.push(` router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-information originate always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` redistribute ${r} subnets`));
+        if (p.ospf.cost) cmds.push(` auto-cost reference-bandwidth ${p.ospf.cost}`);
+        // 旧实现无条件写 `passive-interface default`，它表示【所有】接口都静默，
+        // 跟用户点名的那几个正好相反 —— 用户想静默 2 个口，结果整个 OSPF 都不跑。
+        ciscoPassiveInterfaces(cmds, p.ospf.passiveInterfaces);
+        if (p.ospf.authMode === 'md5') cmds.push(` area ${p.ospf.area} authentication message-digest`);
+        else if (p.ospf.authMode === 'simple') cmds.push(` area ${p.ospf.area} authentication`);
         p.ospf.networks.forEach((n) => {
           cmds.push(` network ${n.network} ${n.wildcard} area ${n.area || p.ospf!.area}`);
         });
+        cmds.push(' exit');
+
+        // 认证密钥和网络类型在 IOS 上都是【接口级】命令，进程视图里没有。
+        // 旧的 ` network-type p2mp` 就是这么来的：参数没丢，但那条命令不存在。
+        p.ospf.networks.forEach((n) => {
+          if (!n.iface) return;
+          const lines: string[] = [];
+          if (p.ospf!.authKey && p.ospf!.authMode === 'md5') lines.push(` ip ospf message-digest-key 1 md5 ${p.ospf!.authKey}`);
+          else if (p.ospf!.authKey && p.ospf!.authMode === 'simple') lines.push(` ip ospf authentication-key ${p.ospf!.authKey}`);
+          if (p.ospf!.networkType) lines.push(` ip ospf network ${CISCO_NETWORK_TYPE[p.ospf!.networkType]}`);
+          if (!lines.length) return;
+          cmds.push(`interface ${n.iface}`);
+          cmds.push(...lines);
+          cmds.push(' exit');
+        });
       }
-      cmds.push(' exit');
     }
 
     if (p.bgp) {

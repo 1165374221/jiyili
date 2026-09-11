@@ -116,30 +116,51 @@ export class HuaweiCommands implements VendorCommands {
     });
 
     if (p.ospf) {
-      const ospfCmd = p.ospf.isV3 ? 'ospfv3' : 'ospf';
-      cmds.push(`${ospfCmd} ${p.ospf.processId} router-id ${p.ospf.routerId}`);
-      if (p.ospf.defaultOriginate) cmds.push(' default-route-advertise always');
-      if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
-      if (!p.ospf.isV3 && p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
-      if (p.ospf.cost) cmds.push(` default cost ${p.ospf.cost}`);
-      if (p.ospf.passiveInterfaces) {
-        const ifs = p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean);
-        ifs.forEach((iface) => cmds.push(` silent-interface ${iface}`));
-      }
+      const pid = p.ospf.processId;
       if (p.ospf.isV3) {
-        cmds.push(` area ${p.ospf.area}`);
+        // OSPFv3 下【没有 network 语句】——协议是挂在接口上的。旧实现在这里照抄 v2 的
+        // `area` + `network`，真机上不成立（华为/H3C 的 v3 都是接口级）。
+        // 所以分两段：先起进程写进程级设置，再逐接口把接口挂进区域。
+        cmds.push(`ospfv3 ${pid} router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-route-advertise always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
+        if (p.ospf.cost) cmds.push(` default cost ${p.ospf.cost}`);
+        if (p.ospf.passiveInterfaces) {
+          p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((i) => cmds.push(` silent-interface ${i}`));
+        }
+        cmds.push(' quit');
+
         p.ospf.networks.forEach((n) => {
-          cmds.push(`  network ${n.network} ${n.wildcard}`);
+          // 只认 iface。不拿 network 兜底：network 是【网络地址】不是接口名，
+          // 兜底就等于把思科那个 `interface 2001:db8::` 的错误复制到华为这边。
+          const iface = n.iface;
+          if (!iface) return;
+          cmds.push(`interface ${iface}`);
+          cmds.push(` ospfv3 ${pid} area ${n.area || p.ospf!.area}`);
+          cmds.push(' quit');
         });
       } else {
+        // v2 分支本次【未改动】。VRP 的 network-type 到底在接口视图还是进程视图，
+        // 我没有把握（见 tests/probe-drops.ts 顶部关于「探测只看有没有丢、
+        // 看不出语法对不对」的说明），在没法核对真机前不动它 —— 改错的代价是
+        // 把本来能用的配置改坏。
+        cmds.push(`ospf ${pid} router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-route-advertise always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
+        if (p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
+        if (p.ospf.cost) cmds.push(` default cost ${p.ospf.cost}`);
+        if (p.ospf.passiveInterfaces) {
+          const ifs = p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean);
+          ifs.forEach((iface) => cmds.push(` silent-interface ${iface}`));
+        }
         cmds.push(` area ${p.ospf.area}`);
         if (p.ospf.authMode === 'simple') cmds.push(`  authentication-mode simple cipher ${p.ospf.authKey || '123'}`);
         else if (p.ospf.authMode === 'md5') cmds.push(`  authentication-mode md5 1 cipher ${p.ospf.authKey || '123'}`);
         p.ospf.networks.forEach((n) => {
           cmds.push(`  network ${n.network} ${n.wildcard}`);
         });
+        cmds.push(' quit');
       }
-      cmds.push(' quit');
     }
 
     if (p.bgp) {

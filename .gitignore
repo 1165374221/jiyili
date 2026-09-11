@@ -31,8 +31,11 @@ spike
 # e2e-quickcmd.cjs / scan.cjs 这些【手写】的验证脚本一起吞掉，而它们恰恰是最该进
 # 版本库的东西：改造完成后再没人记得当初是怎么验的。
 tests/golden.cjs
+tests/probe-drops.cjs
 tests/*.current.json
-# 全表单扫描的【当前】结果：每次重跑都覆盖，只有 baseline 值得入库。
+# 注意：上面那条通配要求【字面量】.current.json（点号），而这个名字是 -current.json
+# （连字符），匹配不上，必须单独列。我删过一次这行，结果 forms-current.json 被当成
+# 新文件暂存进了提交 —— 「当前扫描结果」入库毫无意义，只有 baseline 值得。
 tests/forms-current.json
 
 # Editor directories and files

@@ -112,19 +112,45 @@ export class H3cCommands implements VendorCommands {
     });
 
     if (p.ospf) {
-      cmds.push(`ospf ${p.ospf.processId} router-id ${p.ospf.routerId}`);
-      if (p.ospf.defaultOriginate) cmds.push(' default-route-advertise always');
-      if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
-      if (p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
-      if (p.ospf.cost) cmds.push(` default cost ${p.ospf.cost}`);
-      if (p.ospf.passiveInterfaces) {
-        p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
+      const pid = p.ospf.processId;
+      if (p.ospf.isV3) {
+        // 【本次新加的整条分支】。在此之前 H3C 根本没有 v3 分支：界面上勾了
+        // 「OSPFv3」，这里照样出 `ospf <pid>`，用户拿到一份 OSPFv2 配置，
+        // 而且没有任何提示 —— 这是本次三个 bug 里最隐蔽的一个。
+        // Comware 的 v3 与华为 VRP 同构：进程视图起 ospfv3，接口视图挂区域。
+        cmds.push(`ospfv3 ${pid} router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-route-advertise always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
+        if (p.ospf.cost) cmds.push(` default cost ${p.ospf.cost}`);
+        if (p.ospf.passiveInterfaces) {
+          p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((i) => cmds.push(` silent-interface ${i}`));
+        }
+        cmds.push(' quit');
+
+        p.ospf.networks.forEach((n) => {
+          // 只认 iface，不拿 network 兜底（network 是网络地址，不是接口名）。
+          const iface = n.iface;
+          if (!iface) return;
+          cmds.push(`interface ${iface}`);
+          cmds.push(` ospfv3 ${pid} area ${n.area || p.ospf!.area}`);
+          cmds.push(' quit');
+        });
+      } else {
+        // v2 分支本次未改动（原因同 huawei.ts：network-type 的视图归属没把握）。
+        cmds.push(`ospf ${pid} router-id ${p.ospf.routerId}`);
+        if (p.ospf.defaultOriginate) cmds.push(' default-route-advertise always');
+        if (p.ospf.redistribute?.length) p.ospf.redistribute.forEach((r) => cmds.push(` import-route ${r}`));
+        if (p.ospf.networkType) cmds.push(` network-type ${p.ospf.networkType}`);
+        if (p.ospf.cost) cmds.push(` default cost ${p.ospf.cost}`);
+        if (p.ospf.passiveInterfaces) {
+          p.ospf.passiveInterfaces.split(/[,\s]+/).filter(Boolean).forEach((iface) => cmds.push(` silent-interface ${iface}`));
+        }
+        cmds.push(` area ${p.ospf.area}`);
+        if (p.ospf.authMode === 'simple') cmds.push(`  authentication-mode simple cipher ${p.ospf.authKey || '123'}`);
+        else if (p.ospf.authMode === 'md5') cmds.push(`  authentication-mode md5 1 cipher ${p.ospf.authKey || '123'}`);
+        p.ospf.networks.forEach((n) => cmds.push(`  network ${n.network} ${n.wildcard}`));
+        cmds.push(' quit');
       }
-      cmds.push(` area ${p.ospf.area}`);
-      if (p.ospf.authMode === 'simple') cmds.push(`  authentication-mode simple cipher ${p.ospf.authKey || '123'}`);
-      else if (p.ospf.authMode === 'md5') cmds.push(`  authentication-mode md5 1 cipher ${p.ospf.authKey || '123'}`);
-      p.ospf.networks.forEach((n) => cmds.push(`  network ${n.network} ${n.wildcard}`));
-      cmds.push(' quit');
     }
 
     if (p.bgp) {

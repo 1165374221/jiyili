@@ -54,6 +54,17 @@ const TYPICAL: Case[] = [
   { type: 'acl', name: '典型', params: { aclNumber: 3000, aclType: 'advanced', rules: [{ ruleId: 5, action: 'permit', protocol: 'tcp', sourceIp: '192.168.1.0', sourceWildcard: '0.0.0.255', destIp: '10.0.0.0', destWildcard: '0.0.0.255', dstPort: 80 }], applyInterface: 'GigabitEthernet0/0/1', applyDirection: 'inbound' } },
   { type: 'routing', name: '静态路由', params: { staticRoutes: [{ destination: '10.0.0.0', mask: '255.0.0.0', nextHop: '192.168.1.254', preference: 60 }] } },
   { type: 'routing', name: '黑洞路由', params: { staticRoutes: [{ destination: '172.16.0.0', mask: '255.255.0.0', nextHop: '', blackhole: true }] } },
+  // ⚠️ 这几条是补出来的。在此之前 routing 只覆盖了静态路由，OSPF/RIP/BGP 一条没有 ——
+  // 所以 OSPFv3 在 H3C 上被整个忽略、思科把网络地址当接口名，golden 全绿。
+  // 语料没覆盖的配置，坏了也没人知道。
+  { type: 'routing', name: 'OSPFv2(认证+静默+网络类型+接口)', params: { staticRoutes: [], ospf: { processId: 1, routerId: '1.1.1.1', area: '0', networks: [{ network: '192.168.1.0', wildcard: '0.0.0.255', area: '0', iface: 'GigabitEthernet0/0/1' }], networkType: 'p2mp', cost: 100, authMode: 'md5', authKey: 'ospfkey', passiveInterfaces: 'GigabitEthernet0/0/2', defaultOriginate: true, redistribute: ['static'] } } },
+  { type: 'routing', name: 'OSPFv2(明文认证)', params: { staticRoutes: [], ospf: { processId: 2, routerId: '2.2.2.2', area: '1', networks: [{ network: '10.0.0.0', wildcard: '0.0.0.255', iface: 'GigabitEthernet0/0/5' }], authMode: 'simple', authKey: 'plainkey', defaultOriginate: false } } },
+  // v3 只带接口，不带 networkType/authMode —— 那两个控件在界面上勾了 OSPFv3 就隐藏了，
+  // 所以「v3 + 认证」是界面产生不出来的组合（API 直连可以，但那是另一条路径）。
+  { type: 'routing', name: 'OSPFv3(接口级)', params: { staticRoutes: [], ospf: { processId: 1, routerId: '3.3.3.3', area: '0', networks: [{ network: '', wildcard: '', iface: 'GigabitEthernet0/0/1' }], cost: 100, defaultOriginate: true, redistribute: ['static'], isV3: true } } },
+  { type: 'routing', name: 'OSPFv3(多接口多区域)', params: { staticRoutes: [], ospf: { processId: 10, routerId: '4.4.4.4', area: '0', networks: [{ network: '', wildcard: '', iface: 'GigabitEthernet0/0/2' }, { network: '', wildcard: '', area: '2', iface: 'GigabitEthernet0/0/3' }], defaultOriginate: false, isV3: true } } },
+  { type: 'routing', name: 'BGP', params: { staticRoutes: [], bgp: { asNumber: 65001, routerId: '5.5.5.5', neighbors: [{ ip: '10.0.0.2', remoteAs: 65002 }], networks: [{ network: '192.168.1.0', mask: '255.255.255.0' }] } } },
+  { type: 'routing', name: 'RIPv2', params: { staticRoutes: [], rip: { version: 2, networks: ['192.168.1.0'], passiveInterfaces: 'GigabitEthernet0/0/1', defaultOriginate: true, redistribute: ['static'] } } },
   { type: 'linkagg', name: 'lacp', params: { groupId: 1, mode: 'lacp', ports: '1-4', loadBalance: 'src-dst-ip' } },
   { type: 'stp', name: 'mstp根桥', params: { mode: 'mstp', rootBridge: true, edgePorts: '1-5', bpduGuard: true } },
   { type: 'aaa', name: '本地用户', params: { authMode: 'local', localUsers: [{ username: 'admin', password: 'Admin@123', privilege: 15, serviceTypes: ['ssh', 'telnet'] }], enableTelnet: true, enableSsh: true } },

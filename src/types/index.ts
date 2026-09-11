@@ -84,6 +84,18 @@ export interface OspfNetwork {
   network: string;
   wildcard: string;
   area?: string;
+  /**
+   * 接口名（如 GigabitEthernet0/0/1）。
+   *
+   * 这个字段是为了补上一个真实存在的模型缺口：**OSPF 有相当一部分配置是接口级的**，
+   * 而原来这里只有 {网络地址, 通配符}，于是思科那条分支只能拿网络地址当接口名用，
+   * 生成出 `interface 2001:db8::` 这种命令。
+   *
+   * - OSPFv3：**必填**。v3 没有 network 语句，协议是挂在接口上的。
+   * - OSPFv2：可选。思科/锐捷的认证密钥和网络类型是接口级命令，下到它上面；
+   *   华为/H3C 的认证在进程/区域视图，不需要它。
+   */
+  iface?: string;
 }
 
 export interface OspfConfig {

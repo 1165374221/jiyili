@@ -106,6 +106,168 @@
     {
       "kind": "single",
       "vendor": "huawei",
+      "type": "routing",
+      "name": "OSPFv2(认证+静默+网络类型+接口)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "1.1.1.1",
+          "area": "0",
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "wildcard": "0.0.0.255",
+              "area": "0",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "networkType": "p2mp",
+          "cost": 100,
+          "authMode": "md5",
+          "authKey": "ospfkey",
+          "passiveInterfaces": "GigabitEthernet0/0/2",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "system-view\nospf 1 router-id 1.1.1.1\n default-route-advertise always\n import-route static\n network-type p2mp\n default cost 100\n silent-interface GigabitEthernet0/0/2\n area 0\n  authentication-mode md5 1 cipher ospfkey\n  network 192.168.1.0 0.0.0.255\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "OSPFv2(明文认证)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 2,
+          "routerId": "2.2.2.2",
+          "area": "1",
+          "networks": [
+            {
+              "network": "10.0.0.0",
+              "wildcard": "0.0.0.255",
+              "iface": "GigabitEthernet0/0/5"
+            }
+          ],
+          "authMode": "simple",
+          "authKey": "plainkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nospf 2 router-id 2.2.2.2\n area 1\n  authentication-mode simple cipher plainkey\n  network 10.0.0.0 0.0.0.255\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "OSPFv3(接口级)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "3.3.3.3",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "cost": 100,
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ],
+          "isV3": true
+        }
+      },
+      "command": "system-view\nospfv3 1 router-id 3.3.3.3\n default-route-advertise always\n import-route static\n default cost 100\n quit\ninterface GigabitEthernet0/0/1\n ospfv3 1 area 0\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "OSPFv3(多接口多区域)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 10,
+          "routerId": "4.4.4.4",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/2"
+            },
+            {
+              "network": "",
+              "wildcard": "",
+              "area": "2",
+              "iface": "GigabitEthernet0/0/3"
+            }
+          ],
+          "defaultOriginate": false,
+          "isV3": true
+        }
+      },
+      "command": "system-view\nospfv3 10 router-id 4.4.4.4\n quit\ninterface GigabitEthernet0/0/2\n ospfv3 10 area 0\n quit\ninterface GigabitEthernet0/0/3\n ospfv3 10 area 2\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "BGP",
+      "params": {
+        "staticRoutes": [],
+        "bgp": {
+          "asNumber": 65001,
+          "routerId": "5.5.5.5",
+          "neighbors": [
+            {
+              "ip": "10.0.0.2",
+              "remoteAs": 65002
+            }
+          ],
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "mask": "255.255.255.0"
+            }
+          ]
+        }
+      },
+      "command": "system-view\nbgp 65001\n router-id 5.5.5.5\n peer 10.0.0.2 as-number 65002\n network 192.168.1.0 255.255.255.0\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
+      "type": "routing",
+      "name": "RIPv2",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "passiveInterfaces": "GigabitEthernet0/0/1",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 192.168.1.0\n default-route originate\n import-route static\n silent-interface GigabitEthernet0/0/1\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "huawei",
       "type": "linkagg",
       "name": "lacp",
       "params": {
@@ -667,6 +829,168 @@
         ]
       },
       "command": "system-view\nip route-static 172.16.0.0 255.255.0.0 NULL0"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "OSPFv2(认证+静默+网络类型+接口)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "1.1.1.1",
+          "area": "0",
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "wildcard": "0.0.0.255",
+              "area": "0",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "networkType": "p2mp",
+          "cost": 100,
+          "authMode": "md5",
+          "authKey": "ospfkey",
+          "passiveInterfaces": "GigabitEthernet0/0/2",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "system-view\nospf 1 router-id 1.1.1.1\n default-route-advertise always\n import-route static\n network-type p2mp\n default cost 100\n silent-interface GigabitEthernet0/0/2\n area 0\n  authentication-mode md5 1 cipher ospfkey\n  network 192.168.1.0 0.0.0.255\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "OSPFv2(明文认证)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 2,
+          "routerId": "2.2.2.2",
+          "area": "1",
+          "networks": [
+            {
+              "network": "10.0.0.0",
+              "wildcard": "0.0.0.255",
+              "iface": "GigabitEthernet0/0/5"
+            }
+          ],
+          "authMode": "simple",
+          "authKey": "plainkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "system-view\nospf 2 router-id 2.2.2.2\n area 1\n  authentication-mode simple cipher plainkey\n  network 10.0.0.0 0.0.0.255\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "OSPFv3(接口级)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "3.3.3.3",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "cost": 100,
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ],
+          "isV3": true
+        }
+      },
+      "command": "system-view\nospfv3 1 router-id 3.3.3.3\n default-route-advertise always\n import-route static\n default cost 100\n quit\ninterface GigabitEthernet0/0/1\n ospfv3 1 area 0\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "OSPFv3(多接口多区域)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 10,
+          "routerId": "4.4.4.4",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/2"
+            },
+            {
+              "network": "",
+              "wildcard": "",
+              "area": "2",
+              "iface": "GigabitEthernet0/0/3"
+            }
+          ],
+          "defaultOriginate": false,
+          "isV3": true
+        }
+      },
+      "command": "system-view\nospfv3 10 router-id 4.4.4.4\n quit\ninterface GigabitEthernet0/0/2\n ospfv3 10 area 0\n quit\ninterface GigabitEthernet0/0/3\n ospfv3 10 area 2\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "BGP",
+      "params": {
+        "staticRoutes": [],
+        "bgp": {
+          "asNumber": 65001,
+          "routerId": "5.5.5.5",
+          "neighbors": [
+            {
+              "ip": "10.0.0.2",
+              "remoteAs": 65002
+            }
+          ],
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "mask": "255.255.255.0"
+            }
+          ]
+        }
+      },
+      "command": "system-view\nbgp 65001\n router-id 5.5.5.5\n peer 10.0.0.2 as-number 65002\n network 192.168.1.0 255.255.255.0\n quit"
+    },
+    {
+      "kind": "single",
+      "vendor": "h3c",
+      "type": "routing",
+      "name": "RIPv2",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "passiveInterfaces": "GigabitEthernet0/0/1",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "system-view\nrip 1\n version 2\n network 192.168.1.0\n default-route originate\n import-route static\n silent-interface GigabitEthernet0/0/1\n quit"
     },
     {
       "kind": "single",
@@ -1236,6 +1560,168 @@
     {
       "kind": "single",
       "vendor": "cisco",
+      "type": "routing",
+      "name": "OSPFv2(认证+静默+网络类型+接口)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "1.1.1.1",
+          "area": "0",
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "wildcard": "0.0.0.255",
+              "area": "0",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "networkType": "p2mp",
+          "cost": 100,
+          "authMode": "md5",
+          "authKey": "ospfkey",
+          "passiveInterfaces": "GigabitEthernet0/0/2",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "configure terminal\nrouter ospf 1\n router-id 1.1.1.1\n default-information originate always\n redistribute static subnets\n auto-cost reference-bandwidth 100\n passive-interface GigabitEthernet0/0/2\n area 0 authentication message-digest\n network 192.168.1.0 0.0.0.255 area 0\n exit\ninterface GigabitEthernet0/0/1\n ip ospf message-digest-key 1 md5 ospfkey\n ip ospf network point-to-multipoint\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "OSPFv2(明文认证)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 2,
+          "routerId": "2.2.2.2",
+          "area": "1",
+          "networks": [
+            {
+              "network": "10.0.0.0",
+              "wildcard": "0.0.0.255",
+              "iface": "GigabitEthernet0/0/5"
+            }
+          ],
+          "authMode": "simple",
+          "authKey": "plainkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter ospf 2\n router-id 2.2.2.2\n area 1 authentication\n network 10.0.0.0 0.0.0.255 area 1\n exit\ninterface GigabitEthernet0/0/5\n ip ospf authentication-key plainkey\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "OSPFv3(接口级)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "3.3.3.3",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "cost": 100,
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ],
+          "isV3": true
+        }
+      },
+      "command": "configure terminal\nipv6 unicast-routing\nipv6 router ospf 1\n router-id 3.3.3.3\n default-information originate always\n redistribute static\n exit\ninterface GigabitEthernet0/0/1\n ipv6 ospf 1 area 0\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "OSPFv3(多接口多区域)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 10,
+          "routerId": "4.4.4.4",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/2"
+            },
+            {
+              "network": "",
+              "wildcard": "",
+              "area": "2",
+              "iface": "GigabitEthernet0/0/3"
+            }
+          ],
+          "defaultOriginate": false,
+          "isV3": true
+        }
+      },
+      "command": "configure terminal\nipv6 unicast-routing\nipv6 router ospf 10\n router-id 4.4.4.4\n exit\ninterface GigabitEthernet0/0/2\n ipv6 ospf 10 area 0\n exit\ninterface GigabitEthernet0/0/3\n ipv6 ospf 10 area 2\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "BGP",
+      "params": {
+        "staticRoutes": [],
+        "bgp": {
+          "asNumber": 65001,
+          "routerId": "5.5.5.5",
+          "neighbors": [
+            {
+              "ip": "10.0.0.2",
+              "remoteAs": 65002
+            }
+          ],
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "mask": "255.255.255.0"
+            }
+          ]
+        }
+      },
+      "command": "configure terminal\nrouter bgp 65001\n bgp router-id 5.5.5.5\n neighbor 10.0.0.2 remote-as 65002\n network 192.168.1.0 mask 255.255.255.0\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
+      "type": "routing",
+      "name": "RIPv2",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "passiveInterfaces": "GigabitEthernet0/0/1",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n default-information originate\n redistribute static\n network 192.168.1.0\n passive-interface GigabitEthernet0/0/1\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "cisco",
       "type": "linkagg",
       "name": "lacp",
       "params": {
@@ -1797,6 +2283,168 @@
         ]
       },
       "command": "configure terminal\nip route 172.16.0.0 255.255.0.0 Null0\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "OSPFv2(认证+静默+网络类型+接口)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "1.1.1.1",
+          "area": "0",
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "wildcard": "0.0.0.255",
+              "area": "0",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "networkType": "p2mp",
+          "cost": 100,
+          "authMode": "md5",
+          "authKey": "ospfkey",
+          "passiveInterfaces": "GigabitEthernet0/0/2",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "configure terminal\nrouter ospf 1\n router-id 1.1.1.1\n default-information originate always\n redistribute static subnets\n auto-cost reference-bandwidth 100\n passive-interface GigabitEthernet0/0/2\n area 0 authentication message-digest\n network 192.168.1.0 0.0.0.255 area 0\n exit\ninterface GigabitEthernet0/0/1\n ip ospf message-digest-key 1 md5 ospfkey\n ip ospf network point-to-multipoint\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "OSPFv2(明文认证)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 2,
+          "routerId": "2.2.2.2",
+          "area": "1",
+          "networks": [
+            {
+              "network": "10.0.0.0",
+              "wildcard": "0.0.0.255",
+              "iface": "GigabitEthernet0/0/5"
+            }
+          ],
+          "authMode": "simple",
+          "authKey": "plainkey",
+          "defaultOriginate": false
+        }
+      },
+      "command": "configure terminal\nrouter ospf 2\n router-id 2.2.2.2\n area 1 authentication\n network 10.0.0.0 0.0.0.255 area 1\n exit\ninterface GigabitEthernet0/0/5\n ip ospf authentication-key plainkey\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "OSPFv3(接口级)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 1,
+          "routerId": "3.3.3.3",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/1"
+            }
+          ],
+          "cost": 100,
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ],
+          "isV3": true
+        }
+      },
+      "command": "configure terminal\nipv6 unicast-routing\nipv6 router ospf 1\n router-id 3.3.3.3\n default-information originate always\n redistribute static\n exit\ninterface GigabitEthernet0/0/1\n ipv6 ospf 1 area 0\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "OSPFv3(多接口多区域)",
+      "params": {
+        "staticRoutes": [],
+        "ospf": {
+          "processId": 10,
+          "routerId": "4.4.4.4",
+          "area": "0",
+          "networks": [
+            {
+              "network": "",
+              "wildcard": "",
+              "iface": "GigabitEthernet0/0/2"
+            },
+            {
+              "network": "",
+              "wildcard": "",
+              "area": "2",
+              "iface": "GigabitEthernet0/0/3"
+            }
+          ],
+          "defaultOriginate": false,
+          "isV3": true
+        }
+      },
+      "command": "configure terminal\nipv6 unicast-routing\nipv6 router ospf 10\n router-id 4.4.4.4\n exit\ninterface GigabitEthernet0/0/2\n ipv6 ospf 10 area 0\n exit\ninterface GigabitEthernet0/0/3\n ipv6 ospf 10 area 2\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "BGP",
+      "params": {
+        "staticRoutes": [],
+        "bgp": {
+          "asNumber": 65001,
+          "routerId": "5.5.5.5",
+          "neighbors": [
+            {
+              "ip": "10.0.0.2",
+              "remoteAs": 65002
+            }
+          ],
+          "networks": [
+            {
+              "network": "192.168.1.0",
+              "mask": "255.255.255.0"
+            }
+          ]
+        }
+      },
+      "command": "configure terminal\nrouter bgp 65001\n bgp router-id 5.5.5.5\n neighbor 10.0.0.2 remote-as 65002\n network 192.168.1.0 mask 255.255.255.0\n exit\nend"
+    },
+    {
+      "kind": "single",
+      "vendor": "ruijie",
+      "type": "routing",
+      "name": "RIPv2",
+      "params": {
+        "staticRoutes": [],
+        "rip": {
+          "version": 2,
+          "networks": [
+            "192.168.1.0"
+          ],
+          "passiveInterfaces": "GigabitEthernet0/0/1",
+          "defaultOriginate": true,
+          "redistribute": [
+            "static"
+          ]
+        }
+      },
+      "command": "configure terminal\nrouter rip\n version 2\n default-information originate\n redistribute static\n network 192.168.1.0\n passive-interface GigabitEthernet0/0/1\n exit\nend"
     },
     {
       "kind": "single",
