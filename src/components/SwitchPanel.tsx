@@ -1,10 +1,34 @@
-import { useConsole } from '../AppContext';
+import { useState } from 'react';
+import { useCommand, useConsole } from '../AppContext';
 
 interface Props {
   command: string;
 }
 
 export default function SwitchPanel({ command }: Props) {
+  const { flush, generating } = useCommand();
+  const [sending, setSending] = useState(false);
+
+  // ★ 时序安全：必须先把挂起的生成结算掉，再发。
+  //
+  // 生成是防抖的（200ms）。用户改完最后一个数字【立刻】点下发时，防抖还没触发，
+  // 此时 command 属性仍是上一版 —— 直接把旧配置推给现场交换机，是在动生产设备。
+  // 这里 await flush() 拿到的一定是基于当前 params 现算的结果。
+  //
+  // flush 返回 null 表示这次生成【失败】。此时必须直接放弃下发，绝不能退回到
+  // 传进来的 command：那正是"把旧配置发出去"的路径，而且用户刚改的参数还没生效。
+  const handleSend = async () => {
+    if (sending) return;
+    setSending(true);
+    try {
+      const fresh = await flush();
+      if (fresh === null) return;          // 生成失败：不发，错误提示已由 Provider 显示
+      await sendFormCommand(fresh);
+    } finally {
+      setSending(false);
+    }
+  };
+
   const {
     connMode, setConnMode,
     host, setHost, port, setPort,
@@ -60,8 +84,15 @@ export default function SwitchPanel({ command }: Props) {
           <button onClick={openConsole} disabled={loading} className="px-3 py-1 text-xs bg-cyan-600 text-white rounded hover:bg-cyan-700 disabled:opacity-50">命令终端</button>
         )}
         {connected && connMode === 'ssh' && (
-          <button onClick={() => sendFormCommand(command)} disabled={loading || !command.trim()} className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">下发命令</button>
+          <button
+            onClick={handleSend}
+            disabled={loading || sending || !command.trim()}
+            className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {sending ? '下发中…' : '下发命令'}
+          </button>
         )}
+        {generating && !sending && <span className="text-xs text-slate-400">生成中…</span>}
         {connected && <span className="text-xs text-green-600">● 已连接</span>}
         {consoleMode && <span className="text-xs text-cyan-600">◉ 终端已打开</span>}
       </div>

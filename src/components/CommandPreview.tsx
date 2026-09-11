@@ -1,22 +1,30 @@
 import { useState } from 'react';
+import { useCommand } from '../AppContext';
 
 interface Props {
   command: string;
 }
 
 export default function CommandPreview({ command }: Props) {
+  const { flush } = useCommand();
   const [copied, setCopied] = useState(false);
 
+  // 同 SwitchPanel 的下发：生成是防抖的，直接复制 command 属性可能拿到上一版。
+  // 复制出去的东西多半要被粘进设备，所以同样先结算。
+  // flush 返回 null（生成失败）时不复制 —— 错误提示已由 Provider 显示，
+  // 此时复制一份过期的命令只会让人以为是最新的。
   const copy = async () => {
-    if (!command) return;
+    const fresh = await flush();
+    if (fresh === null) return;
+    if (!fresh) return;
     try {
-      await navigator.clipboard.writeText(command);
+      await navigator.clipboard.writeText(fresh);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // fallback for environments without clipboard API
       const ta = document.createElement('textarea');
-      ta.value = command;
+      ta.value = fresh;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
