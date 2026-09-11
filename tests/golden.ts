@@ -101,6 +101,11 @@ const QUICK: { name: string; text: string }[] = [
   { name: 'vlanif', text: 'vlanif 100 地址 192.168.1.1/24' },
   { name: '静态路由', text: '静态路由 10.0.0.0/8 到 192.168.1.1' },
   { name: 'snmp', text: 'snmp community public' },
+  // 下面两条是 normalizeChinese 顺序 bug 的回归锁。它们此前分别是
+  // 【完全无法识别】和【识别了但静默丢掉 duplex 参数】，而帮助文本一直在
+  // 宣传这两种写法 —— 没有语料就没人会发现。加进来是为了锁住修复。
+  { name: '端口安全（顺序bug）', text: '端口安全 G0/0/1 最大 3 粘贴' },
+  { name: '全双工（顺序bug）', text: '接口 G0/0/1 速率 1000 全双工 描述 myport' },
   { name: '未识别', text: 'zzz 这不是一条能识别的命令' },
 ];
 

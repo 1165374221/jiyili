@@ -546,6 +546,22 @@
       "kind": "quick",
       "vendor": "huawei",
       "type": "quickcmd",
+      "name": "端口安全（顺序bug）",
+      "params": "端口安全 G0/0/1 最大 3 粘贴",
+      "command": "system-view\ninterface G0/0/1\n port-security enable\n port-security max-mac-num 3\n port-security protect-action shutdown\n port-security mac-address sticky\n quit"
+    },
+    {
+      "kind": "quick",
+      "vendor": "huawei",
+      "type": "quickcmd",
+      "name": "全双工（顺序bug）",
+      "params": "接口 G0/0/1 速率 1000 全双工 描述 myport",
+      "command": "system-view\ninterface G0/0/1\n description myport\n speed 1000\n duplex full\n quit"
+    },
+    {
+      "kind": "quick",
+      "vendor": "huawei",
+      "type": "quickcmd",
       "name": "未识别",
       "params": "zzz 这不是一条能识别的命令",
       "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
@@ -1090,6 +1106,22 @@
       "name": "snmp",
       "params": "snmp community public",
       "command": "system-view\nsnmp-agent\nsnmp-agent community read public"
+    },
+    {
+      "kind": "quick",
+      "vendor": "h3c",
+      "type": "quickcmd",
+      "name": "端口安全（顺序bug）",
+      "params": "端口安全 G0/0/1 最大 3 粘贴",
+      "command": "system-view\ninterface G0/0/1\n port-security enable\n port-security max-mac-num 3\n port-security violation shutdown\n port-security mac-address sticky\n quit"
+    },
+    {
+      "kind": "quick",
+      "vendor": "h3c",
+      "type": "quickcmd",
+      "name": "全双工（顺序bug）",
+      "params": "接口 G0/0/1 速率 1000 全双工 描述 myport",
+      "command": "system-view\ninterface G0/0/1\n description myport\n speed 1000\n duplex full\n quit"
     },
     {
       "kind": "quick",
@@ -1644,6 +1676,22 @@
       "kind": "quick",
       "vendor": "cisco",
       "type": "quickcmd",
+      "name": "端口安全（顺序bug）",
+      "params": "端口安全 G0/0/1 最大 3 粘贴",
+      "command": "configure terminal\ninterface G0/0/1\n switchport port-security\n switchport port-security maximum 3\n switchport port-security violation shutdown\n switchport port-security mac-address sticky\n exit\nend"
+    },
+    {
+      "kind": "quick",
+      "vendor": "cisco",
+      "type": "quickcmd",
+      "name": "全双工（顺序bug）",
+      "params": "接口 G0/0/1 速率 1000 全双工 描述 myport",
+      "command": "configure terminal\ninterface G0/0/1\n description myport\n speed 1000\n duplex full\n exit\nend"
+    },
+    {
+      "kind": "quick",
+      "vendor": "cisco",
+      "type": "quickcmd",
       "name": "未识别",
       "params": "zzz 这不是一条能识别的命令",
       "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
@@ -2188,6 +2236,22 @@
       "name": "snmp",
       "params": "snmp community public",
       "command": "configure terminal\nsnmp-server community public RO\nend"
+    },
+    {
+      "kind": "quick",
+      "vendor": "ruijie",
+      "type": "quickcmd",
+      "name": "端口安全（顺序bug）",
+      "params": "端口安全 G0/0/1 最大 3 粘贴",
+      "command": "configure terminal\ninterface G0/0/1\n switchport port-security\n switchport port-security maximum 3\n switchport port-security violation shutdown\n switchport port-security mac-address sticky\n exit\nend"
+    },
+    {
+      "kind": "quick",
+      "vendor": "ruijie",
+      "type": "quickcmd",
+      "name": "全双工（顺序bug）",
+      "params": "接口 G0/0/1 速率 1000 全双工 描述 myport",
+      "command": "configure terminal\ninterface G0/0/1\n description myport\n speed 1000\n duplex full\n exit\nend"
     },
     {
       "kind": "quick",

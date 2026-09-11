@@ -9,6 +9,11 @@ import type {
 function normalizeChinese(text: string): string {
   const map: [RegExp, string][] = [
     // Keywords
+    //
+    // ⚠️ 这张表是【顺序敏感】的朴素替换，长词必须排在它的前缀短词前面。
+    // "端口安全" 曾经排在 "端口" 之后 —— "端口" 先把字吃掉，这条规则成了
+    // 永不生效的死代码（帮助文本里一直宣传着这个用法，实际永远无法识别）。
+    [/端口安全/g, 'port-sec'], // 端口安全
     [/端口/g, 'port'],           // 端口
     [/接入/g, 'access'],          // 接入
     [/干道/g, 'trunk'],           // 干道
@@ -24,12 +29,14 @@ function normalizeChinese(text: string): string {
     [/日志/g, 'syslog'],          // 日志
     [/聚合/g, 'trunk'],           // 聚合
     [/邻居/g, 'lldp'],            // 邻居
-    [/端口安全/g, 'port-sec'], // 端口安全
     [/接口/g, 'interface'],       // 接口
     [/速率/g, 'speed'],           // 速率
+    // 同上：这两条必须排在 "双工" 前面。而且不能只映射成 "full"/"half" ——
+    // iface 正则要的是 `duplex\s+(full|half)` 这个整体，旧写法生成的 "全duplex"
+    // 匹配不上可选组，于是 duplex 被【静默丢弃】：用户选了全双工，配置里没有。
+    [/全双工/g, 'duplex full'],   // 全双工
+    [/半双工/g, 'duplex half'],   // 半双工
     [/双工/g, 'duplex'],          // 双工
-    [/全双工/g, 'full'],      // 全双工
-    [/半双工/g, 'half'],      // 半双工
     [/描述/g, 'desc'],            // 描述
     [/到/g, 'to'],                    // 到
     [/优先级/g, 'pri'],       // 优先级
