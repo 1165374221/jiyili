@@ -14,6 +14,10 @@ dist-ssr
 
 # 构建产物：均由 .ts 派生，不入版本库
 release
+# electron-builder 的输出目录。它原本也叫 release，和上面那个【交付目录】撞名：
+# electron:build 会把 install 包写进 release/，而 release/ 是准备整个拷给客户的，
+# 于是安装包里又套一个安装包。改名为 dist-electron 从根上分开这两件事。
+dist-electron
 # server/core/ 下只有 .ts 源文件，其余全是构建产物。整目录通配而不是逐个列名：
 # plain.cjs 是 esbuild 的中间产物，比 dist 的 React bundle 还好读（没有 React
 # 噪音），一旦构建在 esbuild 与 unlink 之间失败就会留在工作区——逐个列名漏掉它

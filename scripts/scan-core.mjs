@@ -11,20 +11,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NEEDLES } from './needles.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-// 取自真实厂商代码的标志性命令模板。能在二进制里找到 = 模板可被直接读走。
-const NEEDLES = [
-  'system-view',
-  'configure terminal',
-  'switchport mode dot1q-tunnel',
-  'stp region-configuration',
-  'interface range',
-  'GigabitEthernet0/0/',
-  'ip address',
-  'port-security',
-];
 
 function count(buf, needle, enc) {
   const n = Buffer.from(needle, enc);

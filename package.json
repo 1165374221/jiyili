@@ -11,6 +11,7 @@
     "build:core": "node scripts/build-core.mjs",
     "build:core:dev": "node scripts/build-core.mjs --dev",
     "scan:core": "node scripts/scan-core.mjs",
+    "stage:release": "node scripts/stage-release.mjs",
     "electron:dev": "npm run build && electron .",
     "electron:build": "npm run build && electron-builder --win portable",
     "lint": "eslint .",
@@ -31,7 +32,7 @@
     "appId": "com.jiyili.switch-tool",
     "productName": "技毅力",
     "directories": {
-      "output": "release"
+      "output": "dist-electron"
     },
     "files": [
       "dist/**/*",
