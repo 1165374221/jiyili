@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { LinkAggParams } from '../../types';
 
 const defaultParams: LinkAggParams = {
@@ -9,18 +9,14 @@ const defaultParams: LinkAggParams = {
   loadBalance: '',
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function LinkAggForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function LinkAggForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<LinkAggParams>(defaultParams);
 
   const update = (patch: Partial<LinkAggParams>) => {
     const next = { ...p, ...patch };
     setP(next);
-    onChange(vendorInstance.generateLinkAggConfig(next));
+    report('linkagg', next);
   };
 
   return (

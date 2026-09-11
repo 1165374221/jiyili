@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { NtpParams } from '../../types';
 
 const d: NtpParams = { serverIp: '10.0.0.1' };
 
-export default function NtpForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function NtpForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<NtpParams>(d);
-  const emit = (n: Partial<NtpParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generateNtpConfig(next)); };
+  const emit = (n: Partial<NtpParams>) => { const next = { ...p, ...n }; setP(next); report('ntp', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">NTP 时间同步</h2>

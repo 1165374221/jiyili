@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { VxlanParams, VxlanVni } from '../../types';
 
 const defaultVni: VxlanVni = {
@@ -14,17 +14,13 @@ const defaultParams: VxlanParams = {
   vnis: [defaultVni],
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function VxlanForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function VxlanForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<VxlanParams>(defaultParams);
 
   const emit = (next: VxlanParams) => {
     setP(next);
-    onChange(vendorInstance.generateVxlanConfig(next));
+    report('vxlan', next);
   };
 
   const updateVni = (idx: number, patch: Partial<VxlanVni>) => {

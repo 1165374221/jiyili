@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { VrrpParams } from '../../types';
 
 const d: VrrpParams = { vrid: 1, virtualIp: '10.0.0.1', priority: 120, interfaceName: 'Vlanif 100', preempt: true };
 
-export default function VrrpForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function VrrpForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<VrrpParams>(d);
-  const emit = (n: Partial<VrrpParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generateVrrpConfig(next)); };
+  const emit = (n: Partial<VrrpParams>) => { const next = { ...p, ...n }; setP(next); report('vrrp', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">VRRP 配置</h2>

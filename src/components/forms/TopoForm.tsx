@@ -44,7 +44,7 @@ function renderDeviceShape(type: string, x: number, y: number, size: number) {
   }
 }
 
-export default function TopoForm({ onChange: _ }: { onChange: (c: string) => void }) {
+export default function TopoForm() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
   const [selectedType, setSelectedType] = useState<'switch' | 'router' | 'firewall'>('switch');

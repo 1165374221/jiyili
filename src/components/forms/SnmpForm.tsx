@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { SnmpParams } from '../../types';
 
 const d: SnmpParams = { version: 'v2c', community: 'public', location: 'ServerRoom', contact: 'admin@example.com' };
 
-export default function SnmpForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function SnmpForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<SnmpParams>(d);
-  const emit = (n: Partial<SnmpParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generateSnmpConfig(next)); };
+  const emit = (n: Partial<SnmpParams>) => { const next = { ...p, ...n }; setP(next); report('snmp', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">SNMP 配置</h2>

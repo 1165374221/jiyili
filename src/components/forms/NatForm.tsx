@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { NatParams, NatStaticRule, NatServerRule, NatType } from '../../types';
 
 const defaultStatic: NatStaticRule = { insideIp: '192.168.1.10', globalIp: '202.1.1.1' };
@@ -17,17 +17,13 @@ const defaultParams: NatParams = {
   serverRules: [defaultServer],
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function NatForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function NatForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<NatParams>(defaultParams);
 
   const emit = (next: NatParams) => {
     setP(next);
-    onChange(vendorInstance.generateNatConfig(next));
+    report('nat', next);
   };
 
   const setType = (t: NatType) => emit({ ...p, natType: t });

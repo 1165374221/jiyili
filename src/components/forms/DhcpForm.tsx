@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { DhcpParams } from '../../types';
 
 const d: DhcpParams = { mode: 'server', poolName: 'vlan100', network: '192.168.1.0', mask: 24, gateway: '192.168.1.1', dnsServers: '8.8.8.8', startIp: '192.168.1.10', endIp: '192.168.1.200' };
 
-export default function DhcpForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function DhcpForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<DhcpParams>(d);
-  const emit = (n: Partial<DhcpParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generateDhcpConfig(next)); };
+  const emit = (n: Partial<DhcpParams>) => { const next = { ...p, ...n }; setP(next); report('dhcp', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">DHCP 配置</h2>

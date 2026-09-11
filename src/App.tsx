@@ -1,5 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
-import { AppProvider, ConsoleProvider, useApp } from './AppContext';
+import { AppProvider, CommandProvider, ConsoleProvider, useApp, useCommand } from './AppContext';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import VlanForm from './components/forms/VlanForm';
@@ -24,81 +23,60 @@ import SyslogForm from './components/forms/SyslogForm';
 import LldpForm from './components/forms/LldpForm';
 import QuickCmdForm from './components/forms/QuickCmdForm';
 import TopoForm from './components/forms/TopoForm';
+import QinqForm from './components/forms/QinqForm';
 import CommandPreview from './components/CommandPreview';
 import SwitchPanel from './components/SwitchPanel';
 import ConsoleTerminal from './components/ConsoleTerminal';
 
-function stripWrapper(cmd: string): string {
-  let lines = cmd.split('\n');
-  if (lines[0] === 'system-view' || lines[0] === 'configure terminal') lines = lines.slice(1);
-  const last = lines[lines.length - 1];
-  if (last === 'end') lines = lines.slice(0, -1);
-  return lines.join('\n').trim();
-}
-
-function detectVendor(cmd: string): 'hw' | 'cisco' {
-  return cmd.startsWith('system-view') ? 'hw' : 'cisco';
-}
+// 表单不再接收任何 props：参数由表单自己通过 useCommand().report 上报，命令在
+// CommandProvider 里统一生成。这样也不用再给这个 map 标注
+// React.FC<{onChange:(cmd:string)=>void}> —— 21 个表单各自有不同的 params 类型，
+// 那个签名在 strictFunctionTypes 下根本表达不了。
+const forms: Record<string, React.FC> = {
+  vlan: VlanForm,
+  vlanif: VlanifForm,
+  acl: AclForm,
+  routing: RoutingForm,
+  linkagg: LinkAggForm,
+  stp: StpForm,
+  aaa: AaaForm,
+  nat: NatForm,
+  qos: QosForm,
+  vxlan: VxlanForm,
+  stack: StackForm,
+  vrrp: VrrpForm,
+  dhcp: DhcpForm,
+  fwpolicy: FwPolicyForm,
+  iface: IfaceForm,
+  portsec: PortSecForm,
+  snmp: SnmpForm,
+  ntp: NtpForm,
+  syslog: SyslogForm,
+  lldp: LldpForm,
+  quickcmd: QuickCmdForm,
+  topo: TopoForm,
+  // bug #4：QinqForm 一直没注册进这张表，点侧边栏 QINQ 直接白屏。
+  // 四个厂商的 generateQinqConfig 都有完整实现，接进来就能用。
+  qinq: QinqForm,
+};
 
 function FormArea() {
   const { configType } = useApp();
-  const bag = useRef<Record<string, string>>({});
-  const [command, setCommand] = useState('');
-
-  const handleChange = useCallback((configType: string) => (cmd: string) => {
-    bag.current[configType] = cmd;
-    const blocks = Object.entries(bag.current)
-      .filter(([, v]) => v)
-      .map(([, v]) => stripWrapper(v));
-    if (blocks.length === 0) { setCommand(''); return; }
-    const first = Object.values(bag.current).find(Boolean)!;
-    const v = detectVendor(first);
-    const enter = v === 'hw' ? 'system-view' : 'configure terminal';
-    const exit = v === 'hw' ? '' : 'end';
-    const body = blocks.join('\n');
-    setCommand(enter + '\n' + body + (exit ? '\n' + exit : ''));
-  }, []);
-
-  const clearAll = () => {
-    bag.current = {};
-    setCommand('');
-  };
-
-  const forms: Record<string, React.FC<{ onChange: (cmd: string) => void }>> = {
-    vlan: VlanForm,
-    vlanif: VlanifForm,
-    acl: AclForm,
-    routing: RoutingForm,
-    linkagg: LinkAggForm,
-    stp: StpForm,
-    aaa: AaaForm,
-    nat: NatForm,
-    qos: QosForm,
-    vxlan: VxlanForm,
-    stack: StackForm,
-    vrrp: VrrpForm,
-    dhcp: DhcpForm,
-    fwpolicy: FwPolicyForm,
-    iface: IfaceForm,
-    portsec: PortSecForm,
-    snmp: SnmpForm,
-    ntp: NtpForm,
-    syslog: SyslogForm,
-    lldp: LldpForm,
-    quickcmd: QuickCmdForm,
-    topo: TopoForm,
-  };
+  const { command, applied, error, clear } = useCommand();
 
   const FormComponent = forms[configType];
 
-  const entries = Object.entries(bag.current).filter(([, v]) => v);
+  // 兜底：漏注册的表单不再白屏，而是明确说一句。
+  if (!FormComponent) {
+    return <div className="flex-1 p-6 text-sm text-red-600">未注册的配置类型：{configType}</div>;
+  }
 
   return (
     <div className="flex-1 flex gap-0 overflow-hidden min-w-0">
       {/* Main content: form + console terminal */}
       <div className="flex-1 p-6 overflow-y-auto min-w-0 flex flex-col gap-4">
         <div className="flex-1">
-          <FormComponent onChange={handleChange(configType)} />
+          <FormComponent />
         </div>
         <div className="shrink-0 space-y-4">
           <SwitchPanel command={command} />
@@ -111,23 +89,29 @@ function FormArea() {
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-slate-500">命令预览</span>
           <span className="text-xs bg-slate-200 text-slate-600 rounded px-1.5 py-0.5">
-            {entries.length} 段
+            {applied.length} 段
           </span>
           <button
-            onClick={clearAll}
+            onClick={clear}
             className="text-xs text-red-500 hover:underline ml-auto"
           >
             清空
           </button>
         </div>
 
+        {error && (
+          <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1.5 shrink-0">
+            生成失败：{error}
+          </div>
+        )}
+
         <div className="flex-1 min-h-0 flex flex-col">
           <CommandPreview command={command} />
         </div>
 
-        {entries.length > 0 && (
+        {applied.length > 0 && (
           <div className="text-xs text-slate-400 border-t pt-2 shrink-0">
-            已配置：{entries.map(([k]) => k).join(' → ')}
+            已配置：{applied.join(' → ')}
           </div>
         )}
       </div>
@@ -138,15 +122,17 @@ function FormArea() {
 function App() {
   return (
     <AppProvider>
-      <ConsoleProvider>
-        <div className="h-screen flex flex-col">
-          <Header />
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar />
-            <FormArea />
+      <CommandProvider>
+        <ConsoleProvider>
+          <div className="h-screen flex flex-col">
+            <Header />
+            <div className="flex flex-1 overflow-hidden">
+              <Sidebar />
+              <FormArea />
+            </div>
           </div>
-        </div>
-      </ConsoleProvider>
+        </ConsoleProvider>
+      </CommandProvider>
     </AppProvider>
   );
 }

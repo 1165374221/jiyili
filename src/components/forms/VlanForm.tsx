@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { VlanParams } from '../../types';
 
 const defaultParams: VlanParams = {
@@ -9,18 +9,14 @@ const defaultParams: VlanParams = {
   description: '',
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function VlanForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function VlanForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<VlanParams>(defaultParams);
 
   const update = (patch: Partial<VlanParams>) => {
     const next = { ...p, ...patch };
     setP(next);
-    onChange(vendorInstance.generateVlanConfig(next));
+    report('vlan', next);
   };
 
   return (

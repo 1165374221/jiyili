@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { FwPolicyParams } from '../../types';
 
 const presetZones = ['Local', 'trust', 'untrust', 'DMZ', 'mgmt'];
@@ -9,14 +9,14 @@ const d: FwPolicyParams = {
   rules: [{ ruleId: 1, action: 'permit', sourceZone: 'trust', destZone: 'untrust', sourceIp: '192.168.1.0 0.0.0.255', destIp: 'any', protocol: 'ip' }],
 };
 
-export default function FwPolicyForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function FwPolicyForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<FwPolicyParams>(d);
   const [customZone, setCustomZone] = useState('');
 
   const zoneList = p.zones.split(/[,\s]+/).filter(Boolean);
 
-  const emit = (n: FwPolicyParams) => { setP(n); onChange(vendorInstance.generateFwPolicyConfig(n)); };
+  const emit = (n: FwPolicyParams) => { setP(n); report('fwpolicy', n); };
 
   const toggleZone = (zone: string) => {
     let newList: string[];

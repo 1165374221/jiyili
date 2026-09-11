@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { SyslogParams } from '../../types';
 
 const d: SyslogParams = { serverIp: '10.0.0.100', facility: 'local0', level: 'informational' };
 
-export default function SyslogForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function SyslogForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<SyslogParams>(d);
-  const emit = (n: Partial<SyslogParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generateSyslogConfig(next)); };
+  const emit = (n: Partial<SyslogParams>) => { const next = { ...p, ...n }; setP(next); report('syslog', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">Syslog 日志</h2>

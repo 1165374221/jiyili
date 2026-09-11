@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { LldpParams } from '../../types';
 
-export default function LldpForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function LldpForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<LldpParams>({ enable: true });
-  const toggle = () => { const next = { enable: !p.enable }; setP(next); onChange(vendorInstance.generateLldpConfig(next)); };
+  const toggle = () => { const next = { enable: !p.enable }; setP(next); report('lldp', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">LLDP 邻居发现</h2>

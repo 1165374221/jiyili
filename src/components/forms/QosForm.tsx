@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { QosParams, MatchType } from '../../types';
 
 const defaultParams: QosParams = {
@@ -13,17 +13,13 @@ const defaultParams: QosParams = {
   flowControlInterface: 'GigabitEthernet0/0/1',
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function QosForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function QosForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<QosParams>(defaultParams);
 
   const emit = (next: QosParams) => {
     setP(next);
-    onChange(vendorInstance.generateQosConfig(next));
+    report('qos', next);
   };
 
   return (

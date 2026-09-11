@@ -1,10 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
-import { parseAndGenerate } from '../../../server/core/parser';
-
-interface Props {
-  onChange: (cmd: string) => void;
-}
+import { useCommand } from '../../AppContext';
 
 const examples = [
   'vlan 100 port 1-10 access',
@@ -19,18 +14,16 @@ const examples = [
   'stp rstp 根桥',
 ];
 
-export default function QuickCmdForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function QuickCmdForm() {
+  const { report } = useCommand();
   const [text, setText] = useState('');
 
+  // 原样上报文本即可：解析在服务端做（parser.ts 是受保护资产的一部分，
+  // 不再随前端 bundle 发出）。空白输入会被 parser 解析成空命令，
+  // 由 generateAll 按「空命令不进正文」丢掉，与旧行为一致。
   const handleInput = (value: string) => {
     setText(value);
-    if (value.trim()) {
-      const result = parseAndGenerate(value, vendorInstance);
-      onChange(result);
-    } else {
-      onChange('');
-    }
+    report('quickcmd', value);
   };
 
   return (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { StpParams } from '../../types';
 
 const defaultParams: StpParams = {
@@ -9,18 +9,14 @@ const defaultParams: StpParams = {
   bpduGuard: false,
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function StpForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function StpForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<StpParams>(defaultParams);
 
   const update = (patch: Partial<StpParams>) => {
     const next = { ...p, ...patch };
     setP(next);
-    onChange(vendorInstance.generateStpConfig(next));
+    report('stp', next);
   };
 
   return (

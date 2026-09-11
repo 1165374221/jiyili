@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { IfaceParams } from '../../types';
 
 const d: IfaceParams = { interfaceName: 'GigabitEthernet0/0/1', speed: '1000', duplex: 'full', mtu: 1500 };
 
-export default function IfaceForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function IfaceForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<IfaceParams>(d);
-  const emit = (n: Partial<IfaceParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generateIfaceConfig(next)); };
+  const emit = (n: Partial<IfaceParams>) => { const next = { ...p, ...n }; setP(next); report('iface', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">接口配置</h2>

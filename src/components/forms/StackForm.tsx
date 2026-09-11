@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { StackParams, StackMember, StackPort } from '../../types';
 
 const defaultMember: StackMember = { memberId: 1, priority: 150, domainId: 10 };
@@ -10,17 +10,13 @@ const defaultParams: StackParams = {
   stackPorts: [{ ...defaultPort }],
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function StackForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function StackForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<StackParams>(defaultParams);
 
   const emit = (next: StackParams) => {
     setP(next);
-    onChange(vendorInstance.generateStackConfig(next));
+    report('stack', next);
   };
 
   return (

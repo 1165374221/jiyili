@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { PortSecParams } from '../../types';
 
 const d: PortSecParams = { interfaceName: 'GigabitEthernet0/0/1', maxMac: 3, mode: 'shutdown', sticky: true };
 
-export default function PortSecForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function PortSecForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<PortSecParams>(d);
-  const emit = (n: Partial<PortSecParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generatePortSecConfig(next)); };
+  const emit = (n: Partial<PortSecParams>) => { const next = { ...p, ...n }; setP(next); report('portsec', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">端口安全配置</h2>

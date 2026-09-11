@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { AaaParams, AaaLocalUser } from '../../types';
 
 const defaultUser: AaaLocalUser = {
@@ -16,17 +16,13 @@ const defaultParams: AaaParams = {
   enableSsh: true,
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function AaaForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function AaaForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<AaaParams>(defaultParams);
 
   const emit = (next: AaaParams) => {
     setP(next);
-    onChange(vendorInstance.generateAaaConfig(next));
+    report('aaa', next);
   };
 
   const updateUser = (idx: number, patch: Partial<AaaLocalUser>) => {

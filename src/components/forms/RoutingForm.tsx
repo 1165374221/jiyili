@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { RoutingParams, StaticRoute } from '../../types';
 
 const defaultParams: RoutingParams = {
@@ -8,17 +8,13 @@ const defaultParams: RoutingParams = {
   bgp: undefined,
 };
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function RoutingForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function RoutingForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<RoutingParams>(defaultParams);
 
   const emit = (next: RoutingParams) => {
     setP(next);
-    onChange(vendorInstance.generateRoutingConfig(next));
+    report('routing', next);
   };
 
   const addStatic = () => {

@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { QinqParams } from '../../types';
 
 const d: QinqParams = { interfaceName: 'GigabitEthernet0/0/1', outerVlan: 100, innerVlans: '10,20,30', mode: 'basic' };
 
-export default function QinqForm({ onChange }: { onChange: (c: string) => void }) {
-  const { vendorInstance } = useApp();
+export default function QinqForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<QinqParams>(d);
-  const emit = (n: Partial<QinqParams>) => { const next = { ...p, ...n }; setP(next); onChange(vendorInstance.generateQinqConfig(next)); };
+  const emit = (n: Partial<QinqParams>) => { const next = { ...p, ...n }; setP(next); report('qinq', next); };
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">QINQ VLAN 双层标签</h2>

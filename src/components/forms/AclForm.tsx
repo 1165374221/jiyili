@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../../AppContext';
+import { useCommand } from '../../AppContext';
 import type { AclParams, AclRule, AclCategory } from '../../types';
 
 function emptyRule(id: number, aclType: AclCategory): AclRule {
@@ -29,17 +29,13 @@ function defaultParams(): AclParams {
   };
 }
 
-interface Props {
-  onChange: (cmd: string) => void;
-}
-
-export default function AclForm({ onChange }: Props) {
-  const { vendorInstance } = useApp();
+export default function AclForm() {
+  const { report } = useCommand();
   const [p, setP] = useState<AclParams>(defaultParams());
 
   const emit = (next: AclParams) => {
     setP(next);
-    onChange(vendorInstance.generateAclConfig(next));
+    report('acl', next);
   };
 
   const setType = (t: AclCategory) => {
