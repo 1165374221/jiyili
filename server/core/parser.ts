@@ -1,22 +1,10 @@
 import type { VendorCommands } from './vendors/base';
+import { cidrToMask } from './vendors/base';
 import type {
   VlanParams, VlanifParams, AclParams, AclRule, RoutingParams, StaticRoute,
   VrrpParams, DhcpParams, StpParams, LinkAggParams, NatParams,
   IfaceParams, PortSecParams, SnmpParams,
 } from '../../src/types';
-
-function cidrToMaskStr(bits: number): string {
-  if (bits <= 0 || bits > 32) return '0.0.0.0';
-  const fullOctets = Math.floor(bits / 8);
-  const remainder = bits % 8;
-  const parts = [];
-  for (let i = 0; i < 4; i++) {
-    if (i < fullOctets) parts.push(255);
-    else if (i === fullOctets) parts.push(256 - Math.pow(2, 8 - remainder));
-    else parts.push(0);
-  }
-  return parts.join('.');
-}
 
 function normalizeChinese(text: string): string {
   const map: [RegExp, string][] = [
@@ -107,7 +95,7 @@ export function parseAndGenerate(input: string, vendor: VendorCommands): string 
   // Static route
   const staticMatch = text.match(/static\s+([\d.]+)\/(\d+)\s+to\s+(\S+)(?:\s+pref\s+(\d+))?/i);
   if (staticMatch) {
-    const mask = cidrToMaskStr(Number(staticMatch[2]));
+    const mask = cidrToMask(Number(staticMatch[2]));
     const route: StaticRoute = { destination: staticMatch[1], mask, nextHop: staticMatch[3], preference: staticMatch[4] ? Number(staticMatch[4]) : undefined };
     return vendor.generateRoutingConfig({ staticRoutes: [route] });
   }
@@ -115,7 +103,7 @@ export function parseAndGenerate(input: string, vendor: VendorCommands): string 
   // Blackhole
   const bhMatch = text.match(/blackhole\s+([\d.]+)\/(\d+)/i);
   if (bhMatch) {
-    const route: StaticRoute = { destination: bhMatch[1], mask: cidrToMaskStr(Number(bhMatch[2])), nextHop: 'NULL0', blackhole: true };
+    const route: StaticRoute = { destination: bhMatch[1], mask: cidrToMask(Number(bhMatch[2])), nextHop: 'NULL0', blackhole: true };
     return vendor.generateRoutingConfig({ staticRoutes: [route] });
   }
 

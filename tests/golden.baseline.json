@@ -1520,7 +1520,7 @@
         "ip": "192.168.10.1",
         "mask": 0
       },
-      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 255.255.255.255\n exit\nend"
+      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 0.0.0.0\n exit\nend"
     },
     {
       "kind": "single",
@@ -2069,7 +2069,7 @@
         "ip": "192.168.10.1",
         "mask": 0
       },
-      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 255.255.255.255\n exit\nend"
+      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 0.0.0.0\n exit\nend"
     },
     {
       "kind": "single",
@@ -2374,7 +2374,7 @@
         "vlanif",
         "acl"
       ],
-      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 255.255.255.255\n exit\naccess-list 3000 permit tcp 192.168.1.0 0.0.0.255 10.0.0.0 0.0.0.255 eq 80\ninterface GigabitEthernet0/0/1\n ip access-group 3000 in\n exit\nend"
+      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 0.0.0.0\n exit\naccess-list 3000 permit tcp 192.168.1.0 0.0.0.255 10.0.0.0 0.0.0.255 eq 80\ninterface GigabitEthernet0/0/1\n ip access-group 3000 in\n exit\nend"
     },
     {
       "kind": "composite",
@@ -2441,7 +2441,7 @@
         "vlanif",
         "acl"
       ],
-      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 255.255.255.255\n exit\naccess-list 3000 permit tcp 192.168.1.0 0.0.0.255 10.0.0.0 0.0.0.255 eq 80\ninterface GigabitEthernet0/0/1\n ip access-group 3000 in\n exit\nend"
+      "command": "configure terminal\ninterface Vlan 10\n ip address 192.168.10.1 0.0.0.0\n exit\naccess-list 3000 permit tcp 192.168.1.0 0.0.0.255 10.0.0.0 0.0.0.255 eq 80\ninterface GigabitEthernet0/0/1\n ip access-group 3000 in\n exit\nend"
     },
     {
       "kind": "composite",

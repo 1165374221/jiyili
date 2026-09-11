@@ -22,8 +22,12 @@ import type {
   QinqParams,
 } from '../../../src/types';
 
+// 掩码 0 必须走守卫返回 0.0.0.0：JS 的移位计数按模 32 取值，
+// ~0 << (32 - 0) 实际是 ~0 << 0 === -1，会错算成 255.255.255.255。
+// 这不是理论边界——VlanifForm 的掩码输入是 min={0}，且 Number('') === 0，
+// 所以 /0 在界面上可达，cisco/ruijie 会因此输出错误掩码。
 export function cidrToMask(bits: number): string {
-  if (bits < 0 || bits > 32) return '0.0.0.0';
+  if (bits <= 0 || bits > 32) return '0.0.0.0';
   const u = ~0 << (32 - bits);
   return [(u >>> 24) & 255, (u >>> 16) & 255, (u >>> 8) & 255, u & 255].join('.');
 }
