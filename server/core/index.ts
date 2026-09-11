@@ -7,7 +7,13 @@
 // 与原实现的【有意差异】只有一处：厂商由入参显式指定，不再靠命令字符串
 // 猜（原 App.tsx:39 的 detectVendor）。这是 bug #3 的修复，会改变个别
 // composite 用例的输出，已在 tests/golden.baseline.json 里逐条标注。
-import type { Vendor } from '../../src/types';
+import type {
+  Vendor,
+  VlanParams, VlanifParams, AclParams, RoutingParams, LinkAggParams, StpParams,
+  AaaParams, NatParams, QosParams, VxlanParams, StackParams, VrrpParams,
+  DhcpParams, FwPolicyParams, IfaceParams, PortSecParams, SnmpParams, NtpParams,
+  SyslogParams, LldpParams, QinqParams,
+} from '../../src/types';
 import { DEVICE_MODELS } from '../../src/types';
 import type { VendorCommands } from './vendors/base';
 import { CiscoCommands } from './vendors/cisco';
@@ -47,10 +53,13 @@ export function resolvePortPrefix(vendor: Vendor, modelId: unknown): string | nu
   return m ? m.ports : null;
 }
 
-/** 一个待生成的配置段。payload 在 quickcmd 时是原始文本，其余是表单参数对象。 */
+/**
+ * 一个待生成的配置段。
+ * params 在 quickcmd 时是原始文本字符串，其余 21 种类型时是表单参数对象。
+ */
 export interface GenerateBlock {
   type: string;
-  payload: unknown;
+  params: unknown;
 }
 
 export interface GenerateResult {
@@ -59,34 +68,36 @@ export interface GenerateResult {
   applied: string[];
 }
 
-// 21 个方法的参数类型各不相同，没法用一张表精确表达，所以这里用 any。
-// 参数来自 JSON，边界上本就是 unknown，用 any 不假装比实际知道得更多。
-type Generator = (v: VendorCommands, p: any) => string;
-
 // 21 种配置类型 → 厂商类方法。quickcmd 不在这张表里，它走 parser。
-const GENERATORS: Record<string, Generator> = {
-  vlan: (v, p) => v.generateVlanConfig(p),
-  vlanif: (v, p) => v.generateVlanifConfig(p),
-  acl: (v, p) => v.generateAclConfig(p),
-  routing: (v, p) => v.generateRoutingConfig(p),
-  linkagg: (v, p) => v.generateLinkAggConfig(p),
-  stp: (v, p) => v.generateStpConfig(p),
-  aaa: (v, p) => v.generateAaaConfig(p),
-  nat: (v, p) => v.generateNatConfig(p),
-  qos: (v, p) => v.generateQosConfig(p),
-  vxlan: (v, p) => v.generateVxlanConfig(p),
-  stack: (v, p) => v.generateStackConfig(p),
-  vrrp: (v, p) => v.generateVrrpConfig(p),
-  dhcp: (v, p) => v.generateDhcpConfig(p),
-  fwpolicy: (v, p) => v.generateFwPolicyConfig(p),
-  iface: (v, p) => v.generateIfaceConfig(p),
-  portsec: (v, p) => v.generatePortSecConfig(p),
-  snmp: (v, p) => v.generateSnmpConfig(p),
-  ntp: (v, p) => v.generateNtpConfig(p),
-  syslog: (v, p) => v.generateSyslogConfig(p),
-  lldp: (v, p) => v.generateLldpConfig(p),
-  qinq: (v, p) => v.generateQinqConfig(p),
+// 每一项都写死自己的参数类型：这 21 行长得几乎一样，把 vlan 那行误接成
+// generateVlanifConfig 是极易犯的复制粘贴错误，写了类型 tsc 就会拦下来。
+const GENERATORS = {
+  vlan: (v: VendorCommands, p: VlanParams) => v.generateVlanConfig(p),
+  vlanif: (v: VendorCommands, p: VlanifParams) => v.generateVlanifConfig(p),
+  acl: (v: VendorCommands, p: AclParams) => v.generateAclConfig(p),
+  routing: (v: VendorCommands, p: RoutingParams) => v.generateRoutingConfig(p),
+  linkagg: (v: VendorCommands, p: LinkAggParams) => v.generateLinkAggConfig(p),
+  stp: (v: VendorCommands, p: StpParams) => v.generateStpConfig(p),
+  aaa: (v: VendorCommands, p: AaaParams) => v.generateAaaConfig(p),
+  nat: (v: VendorCommands, p: NatParams) => v.generateNatConfig(p),
+  qos: (v: VendorCommands, p: QosParams) => v.generateQosConfig(p),
+  vxlan: (v: VendorCommands, p: VxlanParams) => v.generateVxlanConfig(p),
+  stack: (v: VendorCommands, p: StackParams) => v.generateStackConfig(p),
+  vrrp: (v: VendorCommands, p: VrrpParams) => v.generateVrrpConfig(p),
+  dhcp: (v: VendorCommands, p: DhcpParams) => v.generateDhcpConfig(p),
+  fwpolicy: (v: VendorCommands, p: FwPolicyParams) => v.generateFwPolicyConfig(p),
+  iface: (v: VendorCommands, p: IfaceParams) => v.generateIfaceConfig(p),
+  portsec: (v: VendorCommands, p: PortSecParams) => v.generatePortSecConfig(p),
+  snmp: (v: VendorCommands, p: SnmpParams) => v.generateSnmpConfig(p),
+  ntp: (v: VendorCommands, p: NtpParams) => v.generateNtpConfig(p),
+  syslog: (v: VendorCommands, p: SyslogParams) => v.generateSyslogConfig(p),
+  lldp: (v: VendorCommands, p: LldpParams) => v.generateLldpConfig(p),
+  qinq: (v: VendorCommands, p: QinqParams) => v.generateQinqConfig(p),
 };
+
+// 21 个方法的参数类型各不相同，没法用单个签名表达，所以派发这一处放宽。
+// never 可赋给任何参数类型，于是下面的调用能通过检查；表本身仍是全类型检查的。
+type AnyGenerator = (v: VendorCommands, p: never) => string;
 
 export const CONFIG_TYPES = Object.keys(GENERATORS);
 
@@ -127,7 +138,7 @@ export function generateAll(
 
   for (const b of blocks) {
     const raw = b.type === 'quickcmd'
-      ? parseAndGenerate(typeof b.payload === 'string' ? b.payload : '', v)
+      ? parseAndGenerate(typeof b.params === 'string' ? b.params : '', v)
       : generateOne(v, b);
     // 与原实现一致：空命令不计入「已配置」，也不进正文。
     if (!raw) continue;
@@ -149,7 +160,8 @@ export function generateAll(
 }
 
 function generateOne(v: VendorCommands, b: GenerateBlock): string {
-  const gen = GENERATORS[b.type];
+  const gen = (GENERATORS as Record<string, AnyGenerator>)[b.type];
   if (!gen) throw new Error(`未知配置类型：${String(b.type)}`);
-  return gen(v, b.payload);
+  // params 来自 JSON，边界上无法静态得知形状，这一处强制收窄是必要的。
+  return gen(v, b.params as never);
 }

@@ -311,6 +311,69 @@ app.post('/api/execute', (req, res) => {
   });
 });
 
+// ---- 命令生成核心 ----
+// 厂商 CLI 生成逻辑（原 src/vendors/** 2127 行 + src/parser.ts）已下沉到
+// server/core/，前端 bundle 里不再有明文命令模板。index.cjs 是构建产物
+// （npm run build:core），不入版本库。
+let core;
+try {
+  core = require('./core/index.cjs');
+} catch {
+  console.error('');
+  console.error('  [启动失败] 缺少 server/core/index.cjs —— 命令生成核心未构建。');
+  console.error('  开发机:   npm run build:core');
+  console.error('  客户机:   交付包不完整（漏了 server/core/index.cjs），请重新打包。');
+  console.error('');
+  process.exit(1);
+}
+
+const MAX_BLOCKS = 64;
+
+// parseAndGenerate 里的正则以 \S+ 起头，回溯代价随输入长度上升。单段 2000
+// 字符已远超任何真实命令，却能把最坏情况压到微秒级。这不是洁癖：本进程同时
+// 挂着 SSH / 串口的 WebSocket，一次主线程卡顿会把客户正在操作的交换机终端
+// 一起僵住。
+const MAX_QUICK_LEN = 2000;
+
+app.post('/api/generate', (req, res) => {
+  const { vendor, modelId, blocks } = req.body || {};
+
+  if (!core.isVendor(vendor)) {
+    return res.json({ success: false, message: `未知厂商：${vendor}` });
+  }
+  if (!Array.isArray(blocks)) {
+    return res.json({ success: false, message: 'blocks 必须是数组' });
+  }
+  if (blocks.length > MAX_BLOCKS) {
+    return res.json({ success: false, message: `配置段过多（上限 ${MAX_BLOCKS} 段）` });
+  }
+  for (const b of blocks) {
+    if (!b || typeof b.type !== 'string') {
+      return res.json({ success: false, message: '每个配置段都必须带字符串 type' });
+    }
+    if (b.type === 'quickcmd') {
+      if (typeof b.params !== 'string') {
+        return res.json({ success: false, message: 'quickcmd 段的 params 必须是字符串' });
+      }
+      if (b.params.length > MAX_QUICK_LEN) {
+        return res.json({ success: false, message: `快速命令过长（上限 ${MAX_QUICK_LEN} 字符）` });
+      }
+    }
+  }
+
+  // modelId 交给 generateAll 按 DEVICE_MODELS[vendor] 白名单解析成 portPrefix。
+  // 不接受客户端直传前缀——那等于允许注入任意端口名。型号查不到时退回厂商类
+  // 初始前缀（与改造前逐字节一致），不报错。
+  try {
+    const r = core.generateAll(vendor, modelId, blocks);
+    res.json({ success: true, command: r.command, applied: r.applied });
+  } catch (err) {
+    // 参数形状不对（比如 vlan 段给了 null）在这里兜住，绝不能掀翻进程——
+    // 同一进程里还挂着客户正在用的 SSH / 串口连接。
+    res.json({ success: false, message: `生成失败：${err.message}` });
+  }
+});
+
 app.get('/api/status', (req, res) => {
   res.json({ connected: sshConnected });
 });

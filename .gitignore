@@ -14,8 +14,12 @@ dist-ssr
 
 # 构建产物：均由 .ts 派生，不入版本库
 release
-server/core/index.cjs
-server/core/index.jsc
+# server/core/ 下只有 .ts 源文件，其余全是构建产物。整目录通配而不是逐个列名：
+# plain.cjs 是 esbuild 的中间产物，比 dist 的 React bundle 还好读（没有 React
+# 噪音），一旦构建在 esbuild 与 unlink 之间失败就会留在工作区——逐个列名漏掉它
+# 就等于把最易读的那份明文交出去。
+server/core/*.cjs
+server/core/*.jsc
 *.bundle.cjs
 *.bundle.jsc
 

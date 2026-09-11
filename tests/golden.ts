@@ -145,13 +145,13 @@ for (const [vendorName, v] of Object.entries(vendors)) {
       if (t === 'quickcmd') {
         const text = 'zzz 这不是一条能识别的命令';
         bag[t] = parseAndGenerate(text, v);
-        blocks.push({ type: 'quickcmd', payload: text });
+        blocks.push({ type: 'quickcmd', params: text });
       } else {
         const pool = [...TYPICAL, ...EDGE].filter((c) => c.type === t);
         const picked = pool[comp.picks[t] ?? 0];
         const fn = v[METHOD[t]] as (p: unknown) => string;
         bag[t] = fn.call(v, picked.params);
-        blocks.push({ type: t, payload: picked.params });
+        blocks.push({ type: t, params: picked.params });
       }
     }
 
