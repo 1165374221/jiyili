@@ -380,21 +380,41 @@ app.get('/api/status', (req, res) => {
 
 const os = require('os');
 const PORT = 3001;
-server.listen(PORT, () => {
-  const nets = os.networkInterfaces();
-  let lanIp = '127.0.0.1';
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) { lanIp = net.address; break; }
-    }
-    if (lanIp !== '127.0.0.1') break;
-  }
+
+// 只监听回环地址。
+//
+// 原实现是 server.listen(PORT)，即绑 0.0.0.0：同网段任何人访问
+// http://<客户机IP>:3001 都能 (a) 调 /api/execute 往客户【已经连上的交换机】
+// 下发任意命令，(b) 把 /api/generate 当 oracle 穷举出全部生成逻辑 ——
+// (b) 恰好和本项目的保护目标正面冲突，等于把刚搬进服务端的东西又用 HTTP 送出去。
+// 本程序的使用方式是客户在自己机器上开浏览器访问 localhost，绑回环没有任何副作用。
+//
+// WebSocket 那条链路（第 59 行的 `new WebSocketServer({ server, path: '/ws' })`）
+// 共用这个 http server，所以这一处改动把交互式终端也一起收进回环了。
+//
+// 留一个显式出口：确有需要（例如要从另一台机器看界面）可以设 SWITCH_CMD_HOST，
+// 但会打印醒目警告 —— 这个开关一开，(a)(b) 两个洞就都回来了。
+const BIND_HOST = process.env.SWITCH_CMD_HOST || '127.0.0.1';
+
+server.listen(PORT, BIND_HOST, () => {
+  const exposed = BIND_HOST !== '127.0.0.1' && BIND_HOST !== 'localhost';
   console.log('');
   console.log('  ╔══════════════════════════════════════╗');
   console.log('  ║   技毅力 - 服务已启动                ║');
   console.log('  ╠══════════════════════════════════════╣');
   console.log('  ║  本机: http://localhost:3001         ║');
-  console.log(`  ║  局域网: http://${lanIp}:3001   ║`);
   console.log('  ╚══════════════════════════════════════╝');
+  if (exposed) {
+    const nets = os.networkInterfaces();
+    console.log('');
+    console.log('  ⚠️  警告：已按 SWITCH_CMD_HOST 绑定到非回环地址，本机服务对本网段可见。');
+    console.log('     同网段任何人都能调用 /api/execute 向已连接的交换机下发命令，');
+    console.log('     也能调用 /api/generate 抄走全部命令生成逻辑。');
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]) {
+        if (net.family === 'IPv4' && !net.internal) console.log(`     局域网地址: http://${net.address}:${PORT}`);
+      }
+    }
+  }
   console.log('');
 });

@@ -59,6 +59,18 @@ window.__setNative = (el, value) => {
   el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
 };
+// ⚠️ 已知覆盖盲区（实测确认，2026-09-11）：这个函数在【一个同步 tick 里点掉所有
+// 「+」按钮】，而每个表单的 handler 都捕获了同一份 stale state —— addOspfNet /
+// addRip / addBgp 各自从同一个 p 派生出新对象，后一个把前一个整个覆盖掉。
+// 结果：只有 DOM 里【最后一个】「+」按钮的效果存活。
+//
+// 实测（路由表单）：批量点完后控件数 7，OSPF 面板没打开，只有 BGP 在。所以路由
+// 表单的扫描【从来没覆盖 OSPF / RIP，也没覆盖静态路由】。
+//
+// 影响：任何带多个「+」按钮的表单，扫描都只覆盖最后一个面板；这些表单的
+// 「逐字段一致」是「没走到那块」的一致，不是「走过了没变」的一致。
+// 补覆盖要改成【点一个、等 re-render、再点下一个】，并重新固化 baseline。
+// 路由表单的实际覆盖目前由 tests/e2e-routing-ui.cjs 承担（那里是逐个点击的）。
 window.__clickAdders = () => {
   const adders = [...document.querySelectorAll('button')].filter((b) => /^\\s*\\+/.test(b.textContent));
   adders.forEach((b) => b.click());
