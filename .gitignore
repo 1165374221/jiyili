@@ -22,6 +22,10 @@ server/core/index.jsc
 # 步骤0.2 保护方案实测的临时目录
 spike
 
+# golden 语料的构建产物（源文件与 baseline 要提交）
+tests/*.cjs
+tests/*.current.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
