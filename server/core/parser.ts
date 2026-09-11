@@ -58,9 +58,24 @@ function normalizeChinese(text: string): string {
   return result;
 }
 
-export function parseAndGenerate(input: string, vendor: VendorCommands): string {
+/**
+ * 把一条简写命令解析成完整 CLI。
+ *
+ * 返回 null 表示「没识别出来」。这个 null 是刻意与「生成了空命令」区分开的
+ * 语义，调用方按 falsy 一并跳过即可。
+ *
+ * ⚠️ 旧实现未识别时返回的是一段 19 行中文帮助文本，那是个真 bug，有两个后果：
+ *   1. 前端把它当命令显示 —— 用户一边打字预览区一边刷满红字，分不清
+ *      「还没输完」和「真输错了」。这正是「手动输入提示无法识别」的来源。
+ *   2. 更严重：generateAll 认不出这是帮助文本，会把它当成一个正常配置段拼进
+ *      正文。先碰快速命令再配 VLAN，生成的脚本里就夹着这段中文，随
+ *      「下发命令」推到现场交换机上。
+ * 帮助文本本身没有消失，而是搬到了前端 src/quickRef.ts —— 那里才是它该待的
+ * 地方（它是 UI 文案，且与原语法表的可解析性由 golden 断言焊死）。
+ */
+export function parseAndGenerate(input: string, vendor: VendorCommands): string | null {
   const text = normalizeChinese(input).trim();
-  if (!text) return '';
+  if (!text) return null;
 
   // VLAN
   const vlanMatch = text.match(/vlan\s+([\d,]+)\s+port\s+([\d,\s\-]+)\s+(access|trunk|hybrid)/i);
@@ -193,18 +208,5 @@ export function parseAndGenerate(input: string, vendor: VendorCommands): string 
   if (/lldp\s+on/i.test(text)) return vendor.generateLldpConfig({ enable: true });
   if (/lldp\s+off/i.test(text)) return vendor.generateLldpConfig({ enable: false });
 
-  return '无法识别命令。支持中英文：\n' +
-    '  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n' +
-    '  vlanif 100 地址 192.168.1.1/24\n' +
-    '  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n' +
-    '  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n' +
-    '  acl 3000 deny tcp 192.168.1.0/24 端口 80\n' +
-    '  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n' +
-    '  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n' +
-    '  nat 映射 tcp 80 192.168.1.100 80\n' +
-    '  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n' +
-    '  接口 G0/0/1 速率 1000 全双工 描述 myport\n' +
-    '  端口安全 G0/0/1 最大 3 粘贴\n' +
-    '  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n' +
-    '  邻居 开启 | 邻居 关闭';
+  return null;
 }

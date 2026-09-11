@@ -143,7 +143,35 @@ try {
     fwIface.success === true && fwIface.command.length > 0 && fwIface.command === hwIface.command,
     JSON.stringify({ fwIface, hwIface }));
 
-  // 13. 跑完上面这些，进程还得活着
+  // 13. 未识别的快速命令必须【什么都不产出】，绝不能把帮助文本当成配置段下发。
+  //     旧实现返回 19 行中文帮助文本，generateAll 认不出它，会把它拼进正文 ——
+  //     先碰快速命令再配 VLAN，推到现场交换机上的脚本里就夹着这段中文。
+  const junkOnly = await post({
+    vendor: 'huawei', modelId: 's5700',
+    blocks: [{ type: 'quickcmd', params: 'zzz 这不是一条能识别的命令' }],
+  });
+  check('未识别的快速命令不产出任何命令',
+    junkOnly.success === true && junkOnly.command === '' && junkOnly.applied.length === 0,
+    JSON.stringify(junkOnly));
+
+  const junkPlusVlan = await post({
+    vendor: 'huawei', modelId: 's5700',
+    blocks: [
+      { type: 'quickcmd', params: 'zzz 这不是一条能识别的命令' },
+      { type: 'vlan', params: { vlanIds: [10], ports: '1-5', portMode: 'access' } },
+    ],
+  });
+  const vlanOnly = await post({
+    vendor: 'huawei', modelId: 's5700',
+    blocks: [{ type: 'vlan', params: { vlanIds: [10], ports: '1-5', portMode: 'access' } }],
+  });
+  check('未识别段不进正文、也不计入 applied',
+    junkPlusVlan.command === vlanOnly.command
+      && JSON.stringify(junkPlusVlan.applied) === '["vlan"]'
+      && !/无法识别/.test(junkPlusVlan.command),
+    JSON.stringify(junkPlusVlan));
+
+  // 14. 跑完上面这些，进程还得活着
   const stillAlive = await fetch(`${BASE}/api/status`).then((r) => r.ok).catch(() => false);
   check('畸形输入之后进程仍然存活', stillAlive === true, '进程已死');
 

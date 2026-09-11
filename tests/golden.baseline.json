@@ -507,8 +507,8 @@
       "vendor": "huawei",
       "type": "quickcmd",
       "name": "中文vlan",
-      "params": "端口1加入vlan 10",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "params": "vlan 100 端口 1-10 接入",
+      "command": "system-view\nvlan 100\ninterface GigabitEthernet0/0/1-10\n port link-type access\n port default vlan 100\n quit"
     },
     {
       "kind": "quick",
@@ -564,7 +564,7 @@
       "type": "quickcmd",
       "name": "未识别",
       "params": "zzz 这不是一条能识别的命令",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": null
     },
     {
       "kind": "single",
@@ -1072,8 +1072,8 @@
       "vendor": "h3c",
       "type": "quickcmd",
       "name": "中文vlan",
-      "params": "端口1加入vlan 10",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "params": "vlan 100 端口 1-10 接入",
+      "command": "system-view\nvlan 100\ninterface GigabitEthernet1/0/1-10\n port link-type access\n port access vlan 100\n quit"
     },
     {
       "kind": "quick",
@@ -1129,7 +1129,7 @@
       "type": "quickcmd",
       "name": "未识别",
       "params": "zzz 这不是一条能识别的命令",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": null
     },
     {
       "kind": "single",
@@ -1637,8 +1637,8 @@
       "vendor": "cisco",
       "type": "quickcmd",
       "name": "中文vlan",
-      "params": "端口1加入vlan 10",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "params": "vlan 100 端口 1-10 接入",
+      "command": "configure terminal\nvlan 100\ninterface GigabitEthernet0/1-10\n switchport mode access\n switchport access vlan 100\n exit\nend"
     },
     {
       "kind": "quick",
@@ -1694,7 +1694,7 @@
       "type": "quickcmd",
       "name": "未识别",
       "params": "zzz 这不是一条能识别的命令",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": null
     },
     {
       "kind": "single",
@@ -2202,8 +2202,8 @@
       "vendor": "ruijie",
       "type": "quickcmd",
       "name": "中文vlan",
-      "params": "端口1加入vlan 10",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "params": "vlan 100 端口 1-10 接入",
+      "command": "configure terminal\nvlan 100\ninterface GigabitEthernet 0/1-10\n switchport mode access\n switchport access vlan 100\n exit\nend"
     },
     {
       "kind": "quick",
@@ -2259,7 +2259,7 @@
       "type": "quickcmd",
       "name": "未识别",
       "params": "zzz 这不是一条能识别的命令",
-      "command": "无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": null
     },
     {
       "kind": "composite",
@@ -2355,23 +2355,23 @@
       "kind": "composite",
       "vendor": "huawei",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "configure terminal\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit\nend"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit"
     },
     {
       "kind": "composite-api",
       "vendor": "huawei",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "system-view\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit"
     },
     {
       "kind": "composite",
@@ -2382,7 +2382,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit"
     },
     {
       "kind": "composite-api",
@@ -2393,7 +2393,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet0/0/1-5\n port link-type access\n port default vlan 10\n quit"
     },
     {
       "kind": "composite",
@@ -2489,23 +2489,23 @@
       "kind": "composite",
       "vendor": "h3c",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "configure terminal\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit\nend"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit"
     },
     {
       "kind": "composite-api",
       "vendor": "h3c",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "system-view\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit"
     },
     {
       "kind": "composite",
@@ -2516,7 +2516,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit"
     },
     {
       "kind": "composite-api",
@@ -2527,7 +2527,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭"
+      "command": "system-view\nvlan 10\n description 办公区\n quit\nvlan 20\n description 办公区\n quit\ninterface GigabitEthernet1/0/1-5\n port link-type access\n port access vlan 10\n quit"
     },
     {
       "kind": "composite",
@@ -2623,23 +2623,23 @@
       "kind": "composite",
       "vendor": "cisco",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "configure terminal\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     },
     {
       "kind": "composite-api",
       "vendor": "cisco",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "configure terminal\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     },
     {
       "kind": "composite",
@@ -2650,7 +2650,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     },
     {
       "kind": "composite-api",
@@ -2661,7 +2661,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     },
     {
       "kind": "composite",
@@ -2757,23 +2757,23 @@
       "kind": "composite",
       "vendor": "ruijie",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "configure terminal\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     },
     {
       "kind": "composite-api",
       "vendor": "ruijie",
       "type": "quickcmd+vlan",
-      "name": "quickcmd未识别+vlan（detectVendor bug）",
+      "name": "quickcmd未识别+vlan",
       "params": [
         "quickcmd",
         "vlan"
       ],
-      "command": "configure terminal\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     },
     {
       "kind": "composite",
@@ -2784,7 +2784,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     },
     {
       "kind": "composite-api",
@@ -2795,7 +2795,7 @@
         "vlan",
         "quickcmd"
       ],
-      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\n无法识别命令。支持中英文：\n  vlan 100 端口 1-10 接入 | vlan 100 port 1-10 access\n  vlanif 100 地址 192.168.1.1/24\n  vrrp 1 vip 10.0.0.1 优先级 120 接口 Vlanif100\n  dhcp 服务器 pool vlan100 192.168.1.0/24 网关 192.168.1.1\n  acl 3000 deny tcp 192.168.1.0/24 端口 80\n  静态路由 10.0.0.0/8 到 192.168.1.1 | 黑洞 10.0.0.0/8\n  ospf 1 rid 1.1.1.1 area 0 net 192.168.1.0/24\n  nat 映射 tcp 80 192.168.1.100 80\n  stp rstp 根桥 | 聚合 Eth-Trunk1 端口 1 2 3\n  接口 G0/0/1 速率 1000 全双工 描述 myport\n  端口安全 G0/0/1 最大 3 粘贴\n  snmp community public | ntp 10.0.0.1 | 日志 10.0.0.100\n  邻居 开启 | 邻居 关闭\nend"
+      "command": "configure terminal\nvlan 10\n name 办公区\n exit\nvlan 20\n name 办公区\n exit\ninterface GigabitEthernet 0/1-5\n switchport mode access\n switchport access vlan 10\n exit\nend"
     }
   ]
 }

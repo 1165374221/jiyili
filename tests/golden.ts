@@ -15,6 +15,7 @@ import { generateAll } from '../server/core/index';
 import type { GenerateBlock } from '../server/core/index';
 import type { Vendor } from '../src/types';
 import { DEVICE_MODELS } from '../src/types';
+import { QUICK_ALL_VARIANTS } from '../src/quickRef';
 
 // ---------- App.tsx:31-41 的原样复刻（聚合语义的基准）----------
 function stripWrapper(cmd: string): string {
@@ -94,9 +95,15 @@ const METHOD: Record<string, keyof VendorCommands> = {
   syslog: 'generateSyslogConfig', lldp: 'generateLldpConfig', qinq: 'generateQinqConfig',
 };
 
-// quickcmd 走 parser，不是 params 对象
-const QUICK: { name: string; text: string }[] = [
-  { name: '中文vlan', text: '端口1加入vlan 10' },
+// quickcmd 走 parser，不是 params 对象。
+//
+// expectUnrecognized 是必须显式标注的：语料里「未识别」的用例，在旧实现下记录的
+// 是那段帮助文本，看起来和正常用例一样有内容，于是**冒充了覆盖率**。本文件里原来
+// 那条名为「中文vlan」、实际写 `端口1加入vlan 10` 的用例就是如此 —— parser 里没有
+// 「加入」规则，它从来没被识别过，却一直以「中文写法已覆盖」的姿态存在。
+// 标了标记之后，下面的断言会分别要求「能识别的必须非 null」「标了未识别的必须 null」。
+const QUICK: { name: string; text: string; expectUnrecognized?: boolean }[] = [
+  { name: '中文vlan', text: 'vlan 100 端口 1-10 接入' },
   { name: '英文vlan', text: 'vlan 100 port 1-10 access' },
   { name: 'vlanif', text: 'vlanif 100 地址 192.168.1.1/24' },
   { name: '静态路由', text: '静态路由 10.0.0.0/8 到 192.168.1.1' },
@@ -106,7 +113,7 @@ const QUICK: { name: string; text: string }[] = [
   // 宣传这两种写法 —— 没有语料就没人会发现。加进来是为了锁住修复。
   { name: '端口安全（顺序bug）', text: '端口安全 G0/0/1 最大 3 粘贴' },
   { name: '全双工（顺序bug）', text: '接口 G0/0/1 速率 1000 全双工 描述 myport' },
-  { name: '未识别', text: 'zzz 这不是一条能识别的命令' },
+  { name: '未识别', text: 'zzz 这不是一条能识别的命令', expectUnrecognized: true },
 ];
 
 const vendors: Record<string, VendorCommands> = {
@@ -135,8 +142,10 @@ const COMPOSITES: { name: string; order: string[]; picks: Record<string, number>
   { name: 'vlan+linkagg+stp（走portFormat）', order: ['vlan', 'linkagg', 'stp'], picks: {} },
   { name: 'acl+vlanif', order: ['acl', 'vlanif'], picks: {} },
   { name: 'vlanif掩码0+acl', order: ['vlanif', 'acl'], picks: { vlanif: 1 } },
-  // detectVendor bug：先碰 quickcmd（未识别返回帮助文本），再碰 vlan
-  { name: 'quickcmd未识别+vlan（detectVendor bug）', order: ['quickcmd', 'vlan'], picks: {} },
+  // 这两条原本是 bug #3（detectVendor 拿未识别的帮助文本当第一条命令来猜厂商）
+  // 的复现用例。bug 已修（厂商显式传入）、且未识别不再返回帮助文本，所以它们
+  // 现在退化成一件事：确认「未识别段」在旧路径和新路径下都被同样地丢掉。
+  { name: 'quickcmd未识别+vlan', order: ['quickcmd', 'vlan'], picks: {} },
   { name: 'vlan+quickcmd未识别', order: ['vlan', 'quickcmd'], picks: {} },
 ];
 
@@ -149,7 +158,10 @@ for (const [vendorName, v] of Object.entries(vendors)) {
     for (const t of comp.order) {
       if (t === 'quickcmd') {
         const text = 'zzz 这不是一条能识别的命令';
-        bag[t] = parseAndGenerate(text, v);
+        // parseAndGenerate 现在对未识别返回 null。这里统一成空串，好让下面这份
+        // 旧路径复刻（aggregate 的 filter(([,v]) => v)）与新路径 generateAll 的
+        // if (!raw) continue 语义对齐 —— 两条路径都应当「未识别 == 不产出任何东西」。
+        bag[t] = parseAndGenerate(text, v) ?? '';
         blocks.push({ type: 'quickcmd', params: text });
       } else {
         const pool = [...TYPICAL, ...EDGE].filter((c) => c.type === t);
@@ -236,5 +248,62 @@ if (widthFailures.length > 0) {
 console.error(
   `✅ 全角/零宽归一化：${Object.keys(vendors).length} 厂商 × (${TYPICAL.length} 类型 + ${QUICK.length} 快速命令 + 零宽) 与半角逐字节一致`,
 );
+
+// ---- 对外宣传的语法必须真的能解析（防「宣传与能力脱节」）----
+//
+// src/quickRef.ts 是「快速命令」面板展示给用户的全部写法。以前这份清单硬编码在
+// parser 的帮助文本里，和实际语法没有任何一致性保证，于是 `端口安全` 和 `全双工`
+// 两条坏写法被宣传了很久都没人发现。这里把它焊死：界面上列出来的每一条，都必须
+// 在 4 个厂商下都解析出非空命令。
+//
+// 反向也断言：未识别必须返回 null，而不是一段文本——旧实现返回的 19 行帮助文本
+// 会被 generateAll 当成正常配置段拼进正文，随「下发命令」推到现场交换机上。
+const refFailures: string[] = [];
+
+for (const vendorName of Object.keys(vendors)) {
+  const v = vendors[vendorName];
+  for (const text of QUICK_ALL_VARIANTS) {
+    const cmd = parseAndGenerate(text, v);
+    if (!cmd || cmd.startsWith('无法识别')) {
+      refFailures.push(`${vendorName} 解析不出：${text}`);
+    }
+  }
+}
+
+// 语料自身的诚实性：标了「能识别」的必须真能识别，标了「未识别」的必须真未识别。
+// 少了这一段，一条写错的语料会安静地退化成「记录帮助文本」，看着仍有内容。
+for (const [vendorName, v] of Object.entries(vendors)) {
+  for (const q of QUICK) {
+    const cmd = parseAndGenerate(q.text, v);
+    const recognized = cmd !== null;
+    if (q.expectUnrecognized && recognized) {
+      refFailures.push(`${vendorName} 「${q.name}」标为未识别，实际解析出了命令：${JSON.stringify(cmd)?.slice(0, 40)}`);
+    }
+    if (!q.expectUnrecognized && !recognized) {
+      refFailures.push(`${vendorName} 「${q.name}」应当能识别，实际返回 null（输入：${q.text}）`);
+    }
+  }
+}
+
+for (const [vendorName, v] of Object.entries(vendors)) {
+  const junk = parseAndGenerate('zzz 这不是一条能识别的命令', v);
+  if (junk !== null) refFailures.push(`${vendorName} 未识别时应返回 null，实际返回：${JSON.stringify(junk)?.slice(0, 40)}`);
+  if (parseAndGenerate('', v) !== null) refFailures.push(`${vendorName} 空输入应返回 null`);
+
+  // 端到端：未识别段绝不能出现在最终下发的脚本里。
+  const modelId = DEVICE_MODELS[vendorName as Vendor][0].id;
+  const leaked = generateAll(vendorName as Vendor, modelId, [
+    { type: 'quickcmd', params: 'zzz 这不是一条能识别的命令' },
+    { type: 'vlan', params: TYPICAL[0].params },
+  ]).command;
+  if (/无法识别/.test(leaked)) refFailures.push(`${vendorName} 未识别文本被拼进了下发命令`);
+}
+
+if (refFailures.length > 0) {
+  console.error('❌ 快速命令语法参考与实际解析能力不一致：');
+  for (const f of refFailures) console.error('   ' + f);
+  process.exit(1);
+}
+console.error(`✅ 语法参考可解析：${Object.keys(vendors).length} 厂商 × ${QUICK_ALL_VARIANTS.length} 条写法全部识别，且未识别返回 null`);
 
 console.log(JSON.stringify({ generatedBy: 'spike/golden.ts (改造前基线)', cases: out }, null, 2));
