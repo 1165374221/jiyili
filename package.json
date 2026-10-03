@@ -2,6 +2,8 @@
   "name": "jiyili",
   "private": true,
   "version": "1.0.0",
+  "description": "技毅力 —— 交换机命令行配置生成工具",
+  "author": "JUZHU <1165374221@qq.com>",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
@@ -31,6 +33,7 @@
   "build": {
     "appId": "com.jiyili.switch-tool",
     "productName": "技毅力",
+    "copyright": "Copyright © 2026 JUZHU",
     "directories": {
       "output": "dist-electron"
     },
@@ -42,10 +45,10 @@
     ],
     "nodeGypRebuild": false,
     "npmRebuild": false,
+    "asarUnpack": [
+      "node_modules/@serialport/**"
+    ],
     "win": {
-      "extraResources": [
-        "node_modules/@serialport/**"
-      ],
       "target": "portable"
     }
   },
